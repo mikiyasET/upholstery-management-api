@@ -1,0 +1,344 @@
+{
+    "brands": [
+        {
+            "name": "Toyota",
+            "logo": "toyota.png",
+            "assetFolder": "Toyota",
+            "models": [
+                { "name": "Avanza", "image": "avanza.png" },
+                { "name": "bZ3", "image": "bZ3.png" },
+                { "name": "bZ4X", "image": "bZ4.png" },
+                { "name": "C-HR", "image": "ch-r.png" },
+                { "name": "Camry", "image": "camry.png" },
+                { "name": "Corolla", "image": "corolla.png" },
+                { "name": "Corolla Cross", "image": "corollaCross.png" },
+                { "name": "FJ Cruiser", "image": "FJ-Cruiser.png" },
+                { "name": "Fortuner", "image": "Fortuner.png" },
+                { "name": "HiAce (Minibus/Dolphin/High-roof)", "image": "HiAce.png" },
+                { "name": "Highlander", "image": "Highlander.png" },
+                { "name": "Hilux", "image": "hilux.png" },
+                { "name": "Land Cruiser", "image": "LandCruiser.png" },
+                { "name": "Land Cruiser 70 series", "image": "LandCruiser-70.png" },
+                { "name": "Land Cruiser Prado", "image": "LandCruiser-Prado.png" },
+                { "name": "Platz", "image": "platz.png" },
+                { "name": "Prius", "image": "prius.png" },
+                { "name": "RAV4", "image": "RAV4.png" },
+                { "name": "Rush", "image": "rush.png" },
+                { "name": "Raize", "image": "raize.png" },
+                { "name": "Tacoma", "image": "tacoma.png" },
+                { "name": "Vitz", "image": "vitz.png" },
+                { "name": "Yaris", "image": "yaris.png" }
+            ]
+        },
+        {
+            "name": "Mercedes-Benz",
+            "logo": "mercedes.png",
+            "assetFolder": "Mercedes",
+            "models": [
+                { "name": "A-Class", "image": "a-class.png" },
+                { "name": "C-Class", "image": "c-class.png" },
+                { "name": "E-Class", "image": "e-class.png" },
+                { "name": "S-Class", "image": "s-class.png" },
+                { "name": "EQE", "image": "EQE.png" },
+                { "name": "EQS", "image": "EQS.png" },
+                { "name": "EQC", "image": "EQC.png" },
+                { "name": "EQB", "image": "EQB.png" },
+                { "name": "EQA", "image": "EQA.png" },
+                { "name": "GLE-Class", "image": "GLE-Class.png" },
+                { "name": "M-Class", "image": "m-class.png" },
+                { "name": "X-Class", "image": "x-class.png" }
+            ]
+        },
+        {
+            "name": "Hyundai",
+            "logo": "hyundai.png",
+            "assetFolder": "Hyundai",
+            "models": [
+                { "name": "Atos / Atoz", "image": "atos.png" },
+                { "name": "Avante / Elantra", "image": "elantra.png" },
+                { "name": "Bayon", "image": "bayon.png" },
+                { "name": "Creta", "image": "creta.png" },
+                { "name": "I10", "image": "i10.png" },
+                { "name": "Santa Fe", "image": "santa-fe.png" },
+                { "name": "Tucson", "image": "tucson.png" },
+                { "name": "Veloster", "image": "veloster.png" }
+            ]
+        },
+        {
+            "name": "Kia",
+            "logo": "kia.png",
+            "assetFolder": "Kia",
+            "models": [
+                { "name": "Cerato", "image": "cerato.png" },
+                { "name": "EV5", "image": "ev5.png" },
+                { "name": "EV6", "image": "ev6.png" },
+                { "name": "EV9", "image": "ev9.png" },
+                { "name": "K5", "image": "k5.png" },
+                { "name": "Picanto", "image": "picanto.png" },
+                { "name": "Rio", "image": "rio.png" },
+                { "name": "Soul", "image": "soul.png" },
+                { "name": "Sportage", "image": "sportage.png" },
+                { "name": "Stonic", "image": "stonic.png" },
+                { "name": "Visto", "image": "visto.png" }
+            ]
+        },
+        {
+            "name": "Nissan",
+            "logo": "nissan.png",
+            "assetFolder": "Nissan",
+            "models": [
+                { "name": "Ariya", "image": "ariya.png" },
+                { "name": "Juke", "image": "juke.png" },
+                { "name": "Kicks", "image": "kicks.png" },
+                { "name": "Micra", "image": "micra.png" },
+                { "name": "Navara", "image": "navara.png" },
+                { "name": "Pathfinder", "image": "pathfinder.png" },
+                { "name": "Patrol", "image": "patrol.png" },
+                { "name": "Qashqai", "image": "qashqai.png" },
+                { "name": "Sentra", "image": "sentra.png" },
+                { "name": "Sunny", "image": "sunny.png" },
+                { "name": "Teana", "image": "teana.png" },
+                { "name": "Terrano", "image": "terrano.png" },
+                { "name": "X-Trail", "image": "x-trail.png" },
+                { "name": "Xterra", "image": "x-terra.png" }
+            ]
+        },
+        {
+            "name": "Chevrolet",
+            "logo": "chevrolet.png",
+            "assetFolder": "Chevrolet",
+            "models": [
+                { "name": "Aveo", "image": "aveo.png" },
+                { "name": "Cruze", "image": "cruze.png" },
+                { "name": "Camaro", "image": "camaro.png" },
+                { "name": "Captiva", "image": "captiva.png" },
+                { "name": "Corvette", "image": "Corvette.png" },
+                { "name": "Orlando", "image": "Orlando.png" },
+                { "name": "Trailblazer", "image": "trailblazer.png" },
+                { "name": "Silverado", "image": "silverado.png" }
+            ]
+        },
+        {
+            "name": "Honda",
+            "logo": "honda.png",
+            "assetFolder": "Honda",
+            "models": [
+                { "name": "Accord", "image": "accord.png" },
+                { "name": "Civic", "image": "civic.png" },
+                { "name": "CR-V", "image": "cr-v.png" },
+                { "name": "e:NP2", "image": "e-np2.png" },
+                { "name": "e:NS1", "image": "e-ns1.png" },
+                { "name": "Elysion", "image": "elysion.png" }
+            ]
+        },
+        {
+            "name": "BMW",
+            "logo": "bmw.png",
+            "assetFolder": "BMW",
+            "models": [
+                { "name": "1 Series", "image": "1Series.png" },
+                { "name": "3 Series", "image": "3Series.png" },
+                { "name": "5 Series", "image": "5Series.png" },
+                { "name": "iX", "image": "iX.png" },
+                { "name": "i3", "image": "i3.png" },
+                { "name": "X3", "image": "X3.png" },
+                { "name": "X5", "image": "X5.png" },
+                { "name": "X6", "image": "X6.png" },
+                { "name": "E30", "image": "e30.png" },
+                { "name": "E36", "image": "e36.png" },
+                { "name": "E46", "image": "E46.png" },
+                { "name": "520i", "image": "520i.png" }
+            ]
+        },
+        {
+            "name": "Audi",
+            "logo": "audi.png",
+            "assetFolder": "Audi",
+            "models": [
+                { "name": "A3", "image": "a3.png" },
+                { "name": "A4", "image": "a4.png" },
+                { "name": "A5", "image": "a5.png" },
+                { "name": "Q2", "image": "q2.png" },
+                { "name": "Q3", "image": "q3.png" },
+                { "name": "Q5", "image": "q5.png" },
+                { "name": "Q8", "image": "q8.png" },
+                { "name": "Q4 e-tron", "image": "q4-e-tron.png" },
+                { "name": "Q8 e-tron", "image": "q8-e-tron.png" },
+                { "name": "e-tron GT", "image": "e-tron-GT.png" }
+            ]
+        },
+        {
+            "name": "BYD",
+            "logo": "byd.png",
+            "assetFolder": "BYD",
+            "models": [
+                { "name": "Seagull", "image": "Seagull.png" },
+                { "name": "Song Plus", "image": "Song-Plus.png" },
+                { "name": "Song Pro", "image": "Song-Pro.png" },
+                { "name": "Song L", "image": "Song-L.png" },
+                { "name": "Qin Plus", "image": "Qin-Plus.png" },
+                { "name": "Yuan Plus", "image": "Yuan-Plus.png" },
+                { "name": "Yuan UP", "image": "Yuan-UP.png" },
+                { "name": "Yuan Pro", "image": "Yuan-Pro.png" },
+                { "name": "Destroyer 05", "image": "Destroyer-05.png" },
+                { "name": "S7", "image": "S7.png" },
+                { "name": "Sealion 06", "image": "sealion-06.png" },
+                { "name": "Sealion 5", "image": "sealion-05.png" },
+                { "name": "Sealion 7", "image": "sealion-07.png" },
+                { "name": "Sealion 8", "image": "sealion-08.png" },
+                { "name": "Frigate 07", "image": "Frigate-07.png" },
+                { "name": "Shark 6", "image": "Shark-6.png" },
+                { "name": "M6", "image": "m6.png" },
+                { "name": "Tang", "image": "Tang.png" },
+                { "name": "Tang L", "image": "Tang-L.png" },
+                { "name": "Han", "image": "Han.png" },
+                { "name": "Han L", "image": "Han-L.png" },
+                { "name": "e2", "image": "e2.png" },
+                { "name": "Denza D9", "image": "Denza-D9.png" },
+                { "name": "Denza N7", "image": "Denza-N7.png" },
+                { "name": "Denza N9", "image": "Denza-N9.png" },
+                { "name": "Leopard 3", "image": "Leopard-3.png" },
+                { "name": "Leopard 5", "image": "Leopard-5.png" },
+                { "name": "Leopard 7", "image": "Leopard-7.png" },
+                { "name": "Leopard 8", "image": "Leopard-8.png" },
+                { "name": "Yangwang U7", "image": "Yangwang-U7.png" },
+                { "name": "Yangwang U8", "image": "Yangwang-U8.png" },
+                { "name": "Yangwang U9", "image": "Yangwang-U9.png" }
+            ]
+        },
+        {
+            "name": "Suzuki",
+            "logo": "suzuki.png",
+            "assetFolder": "Suzuki",
+            "models": [
+                { "name": "Swift", "image": "swift.png" },
+                { "name": "Dzire", "image": "dzire.png" },
+                { "name": "S-Presso", "image": "s-presso.png" },
+                { "name": "Celerio", "image": "celerio.png" },
+                { "name": "Vitara", "image": "vitara.png" },
+                { "name": "Grand Vitara", "image": "Grand-Vitara.png" },
+                { "name": "Ertiga", "image": "ertiga.png" },
+                { "name": "Alto", "image": "alto.png" },
+                { "name": "Ciaz", "image": "ciaz.png" }
+            ]
+        },
+        {
+            "name": "Lexus",
+            "logo": "lexus.png",
+            "assetFolder": "Lexus",
+            "models": [
+                { "name": "ES", "image": "es.png" },
+                { "name": "GX", "image": "gx.png" },
+                { "name": "LX", "image": "lx.png" },
+                { "name": "RX", "image": "rx.png" },
+                { "name": "TX", "image": "tx.png" }
+            ]
+        },
+        {
+            "name": "Tesla",
+            "logo": "tesla.png",
+            "assetFolder": "Tesla",
+            "models": [
+                { "name": "Model 3", "image": "model-3.png" },
+                { "name": "Model S", "image": "model-s.png" },
+                { "name": "Model X", "image": "model-x.png" },
+                { "name": "Model Y", "image": "model-y.png" },
+                { "name": "Roadster", "image": "roadster.png" },
+                { "name": "Semi", "image": "semi.png" },
+                { "name": "Cybertruck", "image": "cybertruck.png" }
+            ]
+        },
+        {
+            "name": "Volkswagen",
+            "logo": "volkswagen.png",
+            "assetFolder": "Volkswagen",
+            "models": [
+                { "name": "ID.3", "image": "id3.png" },
+                { "name": "ID.4", "image": "id4.png" },
+                { "name": "ID.6", "image": "id6.png" },
+                { "name": "ID.7", "image": "id7.png" },
+                { "name": "Beetle", "image": "beetle.png" },
+                { "name": "T1", "image": "t1.png" }
+            ]
+        },
+        {
+            "name": "Jetour",
+            "logo": "jetour.png",
+            "assetFolder": "Jetour",
+            "models": [
+                { "name": "Dashing", "image": "dashing.png" },
+                { "name": "T1", "image": "t1.png" },
+                { "name": "T2", "image": "t2.png" },
+                { "name": "X70 Plus", "image": "x70-plus.png" },
+                { "name": "X70", "image": "x70.png" },
+                { "name": "X90 Plus", "image": "x90-plus.png" }
+            ]
+        },
+        {
+            "name": "Mitsubishi",
+            "logo": "mitsubishi.png",
+            "assetFolder": "Mitsubishi",
+            "models": [
+                { "name": "Attrage", "image": "attrage.png" },
+                { "name": "L200", "image": "l200.png" },
+                { "name": "Lancer", "image": "lancer.png" },
+                { "name": "Outlander", "image": "outlander.png" },
+                { "name": "Pajero", "image": "pajero.png" },
+                { "name": "Xpander", "image": "xpander.png" }
+            ]
+        }, 
+        {
+            "name": "Ford",
+            "logo": "ford.png",
+            "assetFolder": "Ford",
+            "models": [
+                { "name": "F-150", "image": "f-150.png" },
+                { "name": "Ranger", "image": "ranger.png" },
+                { "name": "Fiesta", "image": "fiesta.png" },
+                { "name": "Ecosport", "image": "ecosport.png" },
+                { "name": "Everest", "image": "everest.png" },
+                { "name": "Explorer", "image": "explorer.png" },
+                { "name": "Expedition", "image": "expedition.png" },
+                { "name": "Mustang Mach-E", "image": "mustang-mach-e.png" },
+                { "name": "Mustang", "image": "mustang.png" }
+            ]
+        },
+        {
+            "name": "Lifan",
+            "logo": "lifan.png",
+            "assetFolder": "Lifan",
+            "models": [
+                { "name": "520", "image": "520.png" },
+                { "name": "530", "image": "530.png" },
+                { "name": "620", "image": "620.png" },
+                { "name": "X60", "image": "x60.png" }
+            ]
+        },
+        {
+            "name": "Peugeot",
+            "logo": "peugeot.png",
+            "assetFolder": "Peugeot",
+            "models": [
+                { "name": "5008", "image": "5008.png" },
+                { "name": "2008", "image": "2008.png" },
+                { "name": "3008", "image": "3008.png" },
+                { "name": "301", "image": "301.png" },
+                { "name": "407", "image": "407.png" },
+                { "name": "408", "image": "408.png"},
+                { "name": "206", "image": "206.png" }
+            ]
+        },
+        {
+            "name": "Cadillac",
+            "logo": "cadillac.png",
+            "assetFolder": "Cadillac",
+            "models": [
+                { "name": "CT5", "image": "ct5.png" },
+                { "name": "Escalade-IQ", "image": "escalade-iq.png" },
+                { "name": "Escalade", "image": "escalade.png" },
+                { "name": "Lyriq", "image": "lyriq.png" },
+                { "name": "OPTIQ", "image": "optiq.png" }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,38 @@
+import { z } from 'zod';
+import { AdjustmentReason } from '@prisma/client';
+
+export const restockSchema = z.object({
+  body: z.object({
+    quantityAdded: z.number().positive(),
+    unitCost: z.number().min(0).optional().nullable(),
+    supplierId: z.string().optional().nullable(),
+  }),
+});
+
+export const adjustStockSchema = z.object({
+  body: z.object({
+    storeId: z.string().min(1),
+    quantityDelta: z.number(), // can be positive or negative
+    reason: z.nativeEnum(AdjustmentReason),
+    notes: z.string().optional().nullable(),
+  }),
+});
+
+export const storeTransferSchema = z.object({
+  body: z.object({
+    materialId: z.string().min(1),
+    quantityTransferred: z.number().positive(),
+    notes: z.string().optional().nullable(),
+    responsibleEmployeeId: z.string().optional().nullable(),
+    direction: z.string().optional(),
+  }),
+});
+
+export const stockCountSchema = z.object({
+  body: z.object({
+    materialId: z.string().min(1),
+    storeId: z.string().min(1),
+    countedQuantity: z.number().min(0),
+    notes: z.string().optional().nullable(),
+  }),
+});

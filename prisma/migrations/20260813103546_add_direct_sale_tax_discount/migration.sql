@@ -1,0 +1,6 @@
+-- AlterEnum
+ALTER TYPE "UserRole" ADD VALUE 'DEVELOPER';
+
+-- AlterTable
+ALTER TABLE "DirectSale" ADD COLUMN     "discountAmount" DECIMAL(10,2) NOT NULL DEFAULT 0,
+ADD COLUMN     "taxAmount" DECIMAL(10,2) NOT NULL DEFAULT 0;
