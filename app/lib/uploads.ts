@@ -13,6 +13,7 @@ const storage = multer.diskStorage({
     let subfolder = 'misc';
     if (req.originalUrl.includes('materials')) subfolder = 'materials';
     if (req.originalUrl.includes('services')) subfolder = 'services';
+    if (req.originalUrl.includes('assets')) subfolder = 'assets';
     if (req.originalUrl.includes('car-brands')) subfolder = 'cars/brands';
     else if (req.originalUrl.includes('car-models') || req.originalUrl.includes('cars')) subfolder = 'cars/models';
 

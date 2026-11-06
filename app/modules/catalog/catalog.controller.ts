@@ -8,12 +8,19 @@ export class CatalogController {
   // Materials
   // ==========================================
   static async getMaterials(req: Request, res: Response) {
-    const items = await CatalogService.getMaterials();
+    const { itemCode, search } = req.query as { itemCode?: string; search?: string };
+    const items = await CatalogService.getMaterials({ itemCode, search });
     res.json(items);
   }
 
   static async getMaterial(req: Request, res: Response) {
     const item = await CatalogService.getMaterial(req.params.id);
+    if (!item) return res.status(404).json({ error: { message: 'Not found' } });
+    res.json(item);
+  }
+
+  static async getMaterialByCode(req: Request, res: Response) {
+    const item = await CatalogService.getMaterialByCode(req.params.itemCode);
     if (!item) return res.status(404).json({ error: { message: 'Not found' } });
     res.json(item);
   }
@@ -45,9 +52,19 @@ export class CatalogController {
   static async createServiceGroup(req: Request, res: Response) {
     res.status(201).json(await CatalogService.createServiceGroup(req.body));
   }
+  static async updateServiceGroup(req: Request, res: Response) {
+    const { id } = req.params;
+    res.json(await CatalogService.updateServiceGroup(id, req.body));
+  }
+  static async deleteServiceGroup(req: Request, res: Response) {
+    const { id } = req.params;
+    await CatalogService.deleteServiceGroup(id);
+    res.json({ success: true });
+  }
 
   static async getServices(req: Request, res: Response) {
-    res.json(await CatalogService.getServices());
+    const serviceGroupId = typeof req.query.serviceGroupId === 'string' ? req.query.serviceGroupId : undefined;
+    res.json(await CatalogService.getServices(serviceGroupId));
   }
   static async createService(req: Request, res: Response) {
     const imagePath = req.file ? `services/${req.file.filename}` : undefined;

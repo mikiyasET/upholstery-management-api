@@ -89,10 +89,36 @@ async function main() {
   if (fs.existsSync(carsFilePath)) {
     const carsData = JSON.parse(fs.readFileSync(carsFilePath, 'utf-8'));
 
+    // Clean up any formerly miscategorized models under BYD (Denza, Leopard, Yangwang)
+    const bydBrand = await prisma.carBrand.findFirst({ where: { name: 'BYD' } });
+    if (bydBrand) {
+      const miscategorized = await prisma.carModel.findMany({
+        where: {
+          brandId: bydBrand.id,
+          OR: [
+            { name: { startsWith: 'Denza' } },
+            { name: { startsWith: 'Leopard' } },
+            { name: { startsWith: 'Yangwang' } },
+          ],
+        },
+        include: { _count: { select: { vehicles: true } } },
+      });
+
+      for (const m of miscategorized) {
+        if (m._count.vehicles === 0) {
+          await prisma.carModel.delete({ where: { id: m.id } });
+          console.log(`  ✓ Removed miscategorized model from BYD: ${m.name}`);
+        }
+      }
+    }
+
     for (const brandData of carsData.brands) {
-      // Copy brand logo
-      let brandLogoPath: string | undefined;
-      if (brandData.logo) {
+      let brand = await prisma.carBrand.findFirst({
+        where: { name: brandData.name },
+      });
+
+      let brandLogoPath = brand?.logoUrl || undefined;
+      if (!brandLogoPath && brandData.logo) {
         brandLogoPath = copyImageToUploads(
           path.join(assetsBasePath, 'brands'),
           brandData.logo,
@@ -100,35 +126,64 @@ async function main() {
         );
       }
 
-      const brand = await prisma.carBrand.create({
-        data: {
-          name: brandData.name,
-          logoUrl: brandLogoPath || null,
-        },
-      });
-      console.log(`Brand: ${brandData.name} (logo: ${brandLogoPath || 'none'})`);
+      if (!brand) {
+        brand = await prisma.carBrand.create({
+          data: {
+            name: brandData.name,
+            logoUrl: brandLogoPath || null,
+          },
+        });
+        console.log(`Created brand: ${brandData.name} (logo: ${brandLogoPath || 'none'})`);
+      } else if (brandLogoPath && brand.logoUrl !== brandLogoPath) {
+        brand = await prisma.carBrand.update({
+          where: { id: brand.id },
+          data: { logoUrl: brandLogoPath },
+        });
+        console.log(`Updated brand logo: ${brandData.name}`);
+      }
 
       if (brandData.models && Array.isArray(brandData.models)) {
         const modelsAssetDir = path.join(assetsBasePath, 'models', brandData.assetFolder || brandData.name);
 
         for (const modelData of brandData.models) {
-          // Copy model image
-          let modelImagePath: string | undefined;
-          if (modelData.image) {
-            modelImagePath = copyImageToUploads(
+          const existingModel = await prisma.carModel.findFirst({
+            where: {
+              brandId: brand.id,
+              name: modelData.name,
+            },
+          });
+
+          if (!existingModel) {
+            let modelImagePath: string | undefined;
+            if (modelData.image) {
+              modelImagePath = copyImageToUploads(
+                modelsAssetDir,
+                modelData.image,
+                'cars/models'
+              );
+            }
+
+            await prisma.carModel.create({
+              data: {
+                brandId: brand.id,
+                name: modelData.name,
+                imageUrl: modelImagePath || null,
+              },
+            });
+            console.log(`  + Model: ${brandData.name} ${modelData.name}`);
+          } else if (modelData.image && !existingModel.imageUrl) {
+            const modelImagePath = copyImageToUploads(
               modelsAssetDir,
               modelData.image,
               'cars/models'
             );
+            if (modelImagePath) {
+              await prisma.carModel.update({
+                where: { id: existingModel.id },
+                data: { imageUrl: modelImagePath },
+              });
+            }
           }
-
-          await prisma.carModel.create({
-            data: {
-              brandId: brand.id,
-              name: modelData.name,
-              imageUrl: modelImagePath || null,
-            },
-          });
         }
       }
     }

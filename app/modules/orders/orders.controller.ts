@@ -44,7 +44,7 @@ export class OrdersController {
 
   static async addServiceLine(req: Request, res: Response) {
     try {
-      const line = await OrdersService.addServiceLine(req.params.id, req.body);
+      const line = await OrdersService.addServiceLine(req.params.id, req.body, req.user!.userId);
       res.status(201).json(line);
     } catch (error: any) {
       if (error.message.includes('Insufficient stock')) {
@@ -54,10 +54,37 @@ export class OrdersController {
     }
   }
 
+  static async updateServiceLine(req: Request, res: Response) {
+    const line = await OrdersService.updateServiceLinePrice(
+      req.params.id,
+      req.params.lineId,
+      req.body.priceAtOrderTime,
+      req.user!.userId
+    );
+    res.json(line);
+  }
+
   static async addStandaloneLine(req: Request, res: Response) {
     try {
-      const line = await OrdersService.addStandaloneLine(req.params.id, req.body);
+      const line = await OrdersService.addStandaloneLine(req.params.id, req.body, req.user!.userId);
       res.status(201).json(line);
+    } catch (error: any) {
+      if (error.message.includes('Insufficient stock')) {
+        return res.status(422).json({ error: { message: error.message } });
+      }
+      throw error;
+    }
+  }
+
+  static async updateStandaloneLine(req: Request, res: Response) {
+    try {
+      const line = await OrdersService.updateStandaloneLine(
+        req.params.id,
+        req.params.lineId,
+        req.body,
+        req.user!.userId
+      );
+      res.json(line);
     } catch (error: any) {
       if (error.message.includes('Insufficient stock')) {
         return res.status(422).json({ error: { message: error.message } });
@@ -90,5 +117,25 @@ export class OrdersController {
   static async removeStandaloneLine(req: Request, res: Response) {
     await OrdersService.removeStandaloneLine(req.params.id, req.params.lineId);
     res.json({ success: true });
+  }
+
+  static async updateFsrNumber(req: Request, res: Response) {
+    const order = await OrdersService.updateFsrNumber(req.params.id, req.body.fsrNumber, req.user!.userId);
+    res.json(order);
+  }
+
+  static async updateServiceFee(req: Request, res: Response) {
+    const order = await OrdersService.updateServiceFee(req.params.id, req.body.serviceFee, req.user!.userId);
+    res.json(order);
+  }
+
+  static async notifyTelegram(req: Request, res: Response) {
+    try {
+      const result = await OrdersService.notifyOrderCreated(req.params.id);
+      res.json({ success: result });
+    } catch (err: any) {
+      console.error('[OrdersController] Failed to notify telegram:', err.message);
+      res.status(500).json({ error: { message: err.message } });
+    }
   }
 }

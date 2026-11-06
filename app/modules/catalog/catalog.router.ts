@@ -15,6 +15,7 @@ router.use(requireAuth);
 // Materials
 // ---------------------------------
 router.get('/materials', requirePermission('catalog.materials.view'), CatalogController.getMaterials);
+router.get('/materials/by-code/:itemCode', requirePermission('catalog.materials.view'), CatalogController.getMaterialByCode);
 router.get('/materials/:id', requirePermission('catalog.materials.view'), CatalogController.getMaterial);
 router.post(
   '/materials',
@@ -31,6 +32,8 @@ router.delete('/materials/:id', requirePermission('catalog.materials.remove'), C
 // ---------------------------------
 router.get('/service-groups', requirePermission('catalog.services.view'), CatalogController.getServiceGroups);
 router.post('/service-groups', requirePermission('catalog.services.add'), validate(schemas.serviceGroupSchema), CatalogController.createServiceGroup);
+router.patch('/service-groups/:id', requirePermission('catalog.services.edit'), validate(schemas.updateServiceGroupSchema), CatalogController.updateServiceGroup);
+router.delete('/service-groups/:id', requirePermission('catalog.services.remove'), CatalogController.deleteServiceGroup);
 
 router.get('/services', requirePermission('catalog.services.view'), CatalogController.getServices);
 router.post('/services', requirePermission('catalog.services.add'), upload.single('image'), validate(schemas.serviceSchema), CatalogController.createService);

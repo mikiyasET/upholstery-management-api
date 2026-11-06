@@ -193,17 +193,38 @@
                 { "name": "Tang L", "image": "Tang-L.png" },
                 { "name": "Han", "image": "Han.png" },
                 { "name": "Han L", "image": "Han-L.png" },
-                { "name": "e2", "image": "e2.png" },
-                { "name": "Denza D9", "image": "Denza-D9.png" },
-                { "name": "Denza N7", "image": "Denza-N7.png" },
-                { "name": "Denza N9", "image": "Denza-N9.png" },
-                { "name": "Leopard 3", "image": "Leopard-3.png" },
-                { "name": "Leopard 5", "image": "Leopard-5.png" },
-                { "name": "Leopard 7", "image": "Leopard-7.png" },
-                { "name": "Leopard 8", "image": "Leopard-8.png" },
-                { "name": "Yangwang U7", "image": "Yangwang-U7.png" },
-                { "name": "Yangwang U8", "image": "Yangwang-U8.png" },
-                { "name": "Yangwang U9", "image": "Yangwang-U9.png" }
+                { "name": "e2", "image": "e2.png" }
+            ]
+        },
+        {
+            "name": "Denza",
+            "logo": "denza.png",
+            "assetFolder": "Denza",
+            "models": [
+                { "name": "D9", "image": "Denza-D9.png" },
+                { "name": "N7", "image": "Denza-N7.png" },
+                { "name": "N9", "image": "Denza-N9.png" }
+            ]
+        },
+        {
+            "name": "Leopard",
+            "logo": "leopard.png",
+            "assetFolder": "Leopard",
+            "models": [
+                { "name": "3", "image": "Leopard-3.png" },
+                { "name": "5", "image": "Leopard-5.png" },
+                { "name": "7", "image": "Leopard-7.png" },
+                { "name": "8", "image": "Leopard-8.png" }
+            ]
+        },
+        {
+            "name": "Yangwang",
+            "logo": "yangwang.png",
+            "assetFolder": "Yangwang",
+            "models": [
+                { "name": "U7", "image": "Yangwang-U7.png" },
+                { "name": "U8", "image": "Yangwang-U8.png" },
+                { "name": "U9", "image": "Yangwang-U9.png" }
             ]
         },
         {

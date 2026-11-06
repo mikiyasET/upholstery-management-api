@@ -12,6 +12,9 @@ export const createDirectSaleSchema = z.object({
       quantity: z.number().min(1),
       unitPrice: z.number().min(0),
       discount: z.number().min(0).default(0),
+      materialBrandId: z.string().optional().nullable(),
+      brandName: z.string().optional().nullable(),
+      sizeName: z.string().optional().nullable(),
     })).min(1),
 
     additionalDiscount: z.number().min(0).default(0),

@@ -58,8 +58,9 @@ export class CustomersVehiclesService {
       for (const ac of order.additionalCharges) {
         totalAdditional += Number(ac.price || 0);
       }
+      const serviceFee = Number(order.serviceFee || 0);
 
-      const subTotal = totalService + totalStandalone + totalAdditional;
+      const subTotal = totalService + totalStandalone + totalAdditional + serviceFee;
       const totalDiscount = Number(order.discountAmount || 0);
       const taxAmount = Number(order.taxAmount || 0);
       const grandTotal = subTotal - totalDiscount + taxAmount;

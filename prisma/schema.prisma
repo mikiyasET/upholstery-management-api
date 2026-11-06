@@ -98,6 +98,9 @@ model User {
   directSalesCreated         DirectSale[]
   directSalePaymentsRecorded DirectSalePayment[]
   auditLogEntries            AuditLog[]
+  assetsCreated              Asset[]             @relation("AssetCreatedBy")
+  assetsDeleted              Asset[]             @relation("AssetDeletedBy")
+  assetLogsRecorded          AssetLog[]
 }
 
 model Employee {
@@ -122,6 +125,7 @@ model Employee {
 
 model Material {
   id                   String   @id @default(cuid())
+  itemCode             String   @unique
   nameEn               String
   nameAm               String
   imageUrl             String?
@@ -135,6 +139,7 @@ model Material {
   updatedAt            DateTime @updatedAt
 
   priceHistory                   PriceHistory[]
+  brands                         MaterialBrand[]
   materialStocks                 MaterialStock[]
   serviceCategoryUsages          ServiceCategoryMaterialUsage[]
   orderServiceMaterialDeductions OrderServiceMaterialDeduction[]
@@ -144,16 +149,47 @@ model Material {
   stockAdjustments               StockAdjustment[]
   storeTransfers                 StoreTransfer[]
   stockCounts                    StockCount[]
+
+  @@index([itemCode])
 }
 
 model PriceHistory {
   id            String   @id @default(cuid())
   materialId    String
   material      Material @relation(fields: [materialId], references: [id])
+  brandName     String?
+  sizeName      String?
+  colorName     String?
+  typeName      String?
   price         Decimal  @db.Decimal(10, 2)
   effectiveFrom DateTime @default(now())
   changedById   String
   changedBy     User     @relation(fields: [changedById], references: [id])
+}
+
+model MaterialBrand {
+  id         String   @id @default(cuid())
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  name       String   // e.g. "Abro", "Flamingo"
+  size       String?  // e.g. "Small", "Large", "500ml", "16"
+  color      String?  // e.g. "Red", "Black", "Blue"
+  type       String?  // e.g. "Premium", "Standard", "Economy"
+  price      Decimal  @db.Decimal(10, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  directSaleLines                DirectSaleLine[]
+  orderStandaloneItemLines       OrderStandaloneItemLine[]
+  orderServiceMaterialDeductions OrderServiceMaterialDeduction[]
+  brandStocks                    MaterialBrandStock[]
+  restocks                 Restock[]
+  storeTransfers           StoreTransfer[]
+  stockAdjustments         StockAdjustment[]
+  stockCounts              StockCount[]
+
+  @@unique([materialId, name, size, color, type])
+  @@index([materialId])
 }
 
 model ServiceGroup {
@@ -210,10 +246,11 @@ model Store {
   name String
   type StoreType @unique
 
-  materialStocks   MaterialStock[]
-  restocks         Restock[]
-  stockAdjustments StockAdjustment[]
-  stockCounts      StockCount[]
+  materialStocks      MaterialStock[]
+  materialBrandStocks MaterialBrandStock[]
+  restocks            Restock[]
+  stockAdjustments    StockAdjustment[]
+  stockCounts         StockCount[]
 
   transfersFrom StoreTransfer[] @relation("TransferFromStore")
   transfersTo   StoreTransfer[] @relation("TransferToStore")
@@ -230,65 +267,110 @@ model MaterialStock {
   @@unique([materialId, storeId])
 }
 
+model MaterialBrandStock {
+  id              String        @id @default(cuid())
+  materialBrandId String
+  materialBrand   MaterialBrand @relation(fields: [materialBrandId], references: [id], onDelete: Cascade)
+  storeId         String
+  store           Store         @relation(fields: [storeId], references: [id])
+  quantity        Decimal       @default(0) @db.Decimal(10, 2)
+
+  @@unique([materialBrandId, storeId])
+  @@index([materialBrandId])
+  @@index([storeId])
+}
+
 model StoreTransfer {
-  id                    String    @id @default(cuid())
+  id                    String         @id @default(cuid())
   materialId            String
-  material              Material  @relation(fields: [materialId], references: [id])
+  material              Material       @relation(fields: [materialId], references: [id])
+  materialBrandId       String?
+  materialBrand         MaterialBrand? @relation(fields: [materialBrandId], references: [id], onDelete: SetNull)
+  brandName             String?
+  sizeName              String?
+  colorName             String?
+  typeName              String?
   fromStoreId           String
-  fromStore             Store     @relation("TransferFromStore", fields: [fromStoreId], references: [id])
+  fromStore             Store          @relation("TransferFromStore", fields: [fromStoreId], references: [id])
   toStoreId             String
-  toStore               Store     @relation("TransferToStore", fields: [toStoreId], references: [id])
-  quantityTransferred   Decimal   @db.Decimal(10, 2)
+  toStore               Store          @relation("TransferToStore", fields: [toStoreId], references: [id])
+  quantityTransferred   Decimal        @db.Decimal(10, 2)
   approvedById          String
-  approvedBy            User      @relation(fields: [approvedById], references: [id])
+  approvedBy            User           @relation(fields: [approvedById], references: [id])
   responsibleEmployeeId String?
-  responsibleEmployee   Employee? @relation(fields: [responsibleEmployeeId], references: [id])
-  transferDate          DateTime  @default(now())
+  responsibleEmployee   Employee?      @relation(fields: [responsibleEmployeeId], references: [id])
+  transferDate          DateTime       @default(now())
   notes                 String?
+
+  @@index([materialBrandId])
 }
 
 model StockCount {
-  id                    String   @id @default(cuid())
+  id                    String         @id @default(cuid())
   storeId               String
-  store                 Store    @relation(fields: [storeId], references: [id])
+  store                 Store          @relation(fields: [storeId], references: [id])
   materialId            String
-  material              Material @relation(fields: [materialId], references: [id])
-  countedQuantity       Decimal  @db.Decimal(10, 2)
-  systemQuantityAtCount Decimal  @db.Decimal(10, 2)
-  discrepancy           Decimal  @db.Decimal(10, 2)
+  material              Material       @relation(fields: [materialId], references: [id])
+  materialBrandId       String?
+  materialBrand         MaterialBrand? @relation(fields: [materialBrandId], references: [id], onDelete: SetNull)
+  brandName             String?
+  sizeName              String?
+  colorName             String?
+  typeName              String?
+  countedQuantity       Decimal        @db.Decimal(10, 2)
+  systemQuantityAtCount Decimal        @db.Decimal(10, 2)
+  discrepancy           Decimal        @db.Decimal(10, 2)
   countedById           String
-  countedBy             User     @relation(fields: [countedById], references: [id])
-  countedAt             DateTime @default(now())
+  countedBy             User           @relation(fields: [countedById], references: [id])
+  countedAt             DateTime       @default(now())
   notes                 String?
+
+  @@index([materialBrandId])
 }
 
 model Restock {
-  id            String    @id @default(cuid())
-  materialId    String
-  material      Material  @relation(fields: [materialId], references: [id])
-  storeId       String
-  store         Store     @relation(fields: [storeId], references: [id])
-  quantityAdded Decimal   @db.Decimal(10, 2)
-  unitCost      Decimal?  @db.Decimal(10, 2)
-  supplierId    String?
-  supplier      Supplier? @relation(fields: [supplierId], references: [id])
-  purchaseDate  DateTime  @default(now())
-  recordedById  String
-  recordedBy    User      @relation(fields: [recordedById], references: [id])
+  id              String         @id @default(cuid())
+  materialId      String
+  material        Material       @relation(fields: [materialId], references: [id])
+  materialBrandId String?
+  materialBrand   MaterialBrand? @relation(fields: [materialBrandId], references: [id], onDelete: SetNull)
+  brandName       String?
+  sizeName        String?
+  colorName       String?
+  typeName        String?
+  storeId         String
+  store           Store          @relation(fields: [storeId], references: [id])
+  quantityAdded   Decimal        @db.Decimal(10, 2)
+  unitCost        Decimal?       @db.Decimal(10, 2)
+  supplierId      String?
+  supplier        Supplier?      @relation(fields: [supplierId], references: [id])
+  purchaseDate    DateTime       @default(now())
+  recordedById    String
+  recordedBy      User           @relation(fields: [recordedById], references: [id])
+
+  @@index([materialBrandId])
 }
 
 model StockAdjustment {
-  id            String           @id @default(cuid())
-  materialId    String
-  material      Material         @relation(fields: [materialId], references: [id])
-  storeId       String
-  store         Store            @relation(fields: [storeId], references: [id])
-  quantityDelta Decimal          @db.Decimal(10, 2) // positive or negative
-  reason        AdjustmentReason
-  notes         String?
-  adjustedById  String
-  adjustedBy    User             @relation(fields: [adjustedById], references: [id])
-  adjustedAt    DateTime         @default(now())
+  id              String           @id @default(cuid())
+  materialId      String
+  material        Material         @relation(fields: [materialId], references: [id])
+  materialBrandId String?
+  materialBrand   MaterialBrand?   @relation(fields: [materialBrandId], references: [id], onDelete: SetNull)
+  brandName       String?
+  sizeName        String?
+  colorName       String?
+  typeName        String?
+  storeId         String
+  store           Store            @relation(fields: [storeId], references: [id])
+  quantityDelta   Decimal          @db.Decimal(10, 2) // positive or negative
+  reason          AdjustmentReason
+  notes           String?
+  adjustedById    String
+  adjustedBy      User             @relation(fields: [adjustedById], references: [id])
+  adjustedAt      DateTime         @default(now())
+
+  @@index([materialBrandId])
 }
 
 model Supplier {
@@ -375,20 +457,26 @@ model Customer {
 model Order {
   id             String        @id @default(cuid())
   orderNumber    String        @unique
+  fsrNumber      String?
   vehicleId      String
   vehicle        Vehicle       @relation(fields: [vehicleId], references: [id])
   customerId     String
   customer       Customer      @relation(fields: [customerId], references: [id])
   orderDateTime  DateTime      @default(now())
   orderStatus    OrderStatus   @default(OPEN)
-  paymentStatus  PaymentStatus @default(UNPAID)
-  discountAmount Decimal       @default(0) @db.Decimal(10, 2)
-  taxAmount      Decimal       @default(0) @db.Decimal(10, 2)
-  notes          String?
-  createdById    String
-  createdBy      User          @relation("OrderCreatedBy", fields: [createdById], references: [id])
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  paymentStatus         PaymentStatus @default(UNPAID)
+  discountAmount        Decimal       @default(0) @db.Decimal(10, 2)
+  taxAmount             Decimal       @default(0) @db.Decimal(10, 2)
+  downPayment           Decimal       @default(0) @db.Decimal(10, 2)
+  serviceFee            Decimal       @default(0) @db.Decimal(10, 2)
+  deadline              DateTime?
+  deadlineWarningSent   Boolean       @default(false)
+  deadlineWarningSentAt DateTime?
+  notes                 String?
+  createdById           String
+  createdBy             User          @relation("OrderCreatedBy", fields: [createdById], references: [id])
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
   carStatuses       OrderCarStatus[]
   assignments       OrderAssignment[]
@@ -396,6 +484,10 @@ model Order {
   standaloneLines   OrderStandaloneItemLine[]
   additionalCharges OrderAdditionalCharge[]
   payments          OrderPayment[]
+
+  @@index([fsrNumber])
+  @@index([deadline])
+  @@index([deadlineWarningSent])
 }
 
 model OrderAssignment {
@@ -423,21 +515,35 @@ model OrderServiceLine {
 model OrderServiceMaterialDeduction {
   id                   String           @id @default(cuid())
   orderServiceLineId   String
-  orderServiceLine     OrderServiceLine @relation(fields: [orderServiceLineId], references: [id])
+  orderServiceLine     OrderServiceLine @relation(fields: [orderServiceLineId], references: [id], onDelete: Cascade)
   materialId           String
   material             Material         @relation(fields: [materialId], references: [id])
+  materialBrandId      String?
+  materialBrand        MaterialBrand?   @relation(fields: [materialBrandId], references: [id], onDelete: SetNull)
+  brandName            String?
+  sizeName             String?
+  colorName            String?
+  typeName             String?
   quantityDeducted     Decimal          @db.Decimal(10, 2)
   unitPriceAtOrderTime Decimal?         @db.Decimal(10, 2)
+
+  @@index([materialBrandId])
 }
 
 model OrderStandaloneItemLine {
-  id               String   @id @default(cuid())
+  id               String         @id @default(cuid())
   orderId          String
-  order            Order    @relation(fields: [orderId], references: [id])
+  order            Order          @relation(fields: [orderId], references: [id])
   materialId       String
-  material         Material @relation(fields: [materialId], references: [id])
-  quantity         Decimal  @db.Decimal(10, 2)
-  priceAtOrderTime Decimal  @db.Decimal(10, 2)
+  material         Material       @relation(fields: [materialId], references: [id])
+  materialBrandId  String?
+  materialBrand    MaterialBrand? @relation(fields: [materialBrandId], references: [id], onDelete: SetNull)
+  brandName        String?
+  sizeName         String?
+  colorName        String?
+  typeName         String?
+  quantity         Decimal        @db.Decimal(10, 2)
+  priceAtOrderTime Decimal        @db.Decimal(10, 2)
 }
 
 model OrderAdditionalCharge {
@@ -483,13 +589,19 @@ model DirectSale {
 }
 
 model DirectSaleLine {
-  id              String     @id @default(cuid())
+  id              String         @id @default(cuid())
   directSaleId    String
-  directSale      DirectSale @relation(fields: [directSaleId], references: [id])
+  directSale      DirectSale     @relation(fields: [directSaleId], references: [id])
   materialId      String
-  material        Material   @relation(fields: [materialId], references: [id])
-  quantity        Decimal    @db.Decimal(10, 2)
-  priceAtSaleTime Decimal    @db.Decimal(10, 2)
+  material        Material       @relation(fields: [materialId], references: [id])
+  materialBrandId String?
+  materialBrand   MaterialBrand? @relation(fields: [materialBrandId], references: [id], onDelete: SetNull)
+  brandName       String?
+  sizeName        String?
+  colorName       String?
+  typeName        String?
+  quantity        Decimal        @db.Decimal(10, 2)
+  priceAtSaleTime Decimal        @db.Decimal(10, 2)
 }
 
 model DirectSalePayment {
@@ -519,3 +631,72 @@ model AuditLog {
   newValue    Json?
   timestamp   DateTime    @default(now())
 }
+
+// ---------------------------------------------------------
+// Daily Pre-aggregated Analytics & Revenue Statistics
+// ---------------------------------------------------------
+
+model DailyStats {
+  id                String   @id @default(cuid())
+  date              String   @unique // format: YYYY-MM-DD
+  totalRevenue      Decimal  @default(0) @db.Decimal(12, 2)
+  orderRevenue      Decimal  @default(0) @db.Decimal(12, 2)
+  directSaleRevenue Decimal  @default(0) @db.Decimal(12, 2)
+  orderCount        Int      @default(0)
+  directSaleCount   Int      @default(0)
+  totalOrders       Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([date])
+}
+
+// ---------------------------------------------------------
+// Company Assets & Tools
+// ---------------------------------------------------------
+
+model Asset {
+  id               String     @id @default(cuid())
+  assetTag         String?    @unique
+  nameEn           String
+  nameAm           String
+  description      String?
+  imageUrl         String?
+  quantity         Decimal    @default(1) @db.Decimal(10, 2)
+  unit             String     @default("PCS")
+  category         String?
+  location         String?
+  isDeleted        Boolean    @default(false)
+  deletedAt        DateTime?
+  scheduledPurgeAt DateTime?
+  createdById      String?
+  createdBy        User?      @relation("AssetCreatedBy", fields: [createdById], references: [id])
+  deletedById      String?
+  deletedBy        User?      @relation("AssetDeletedBy", fields: [deletedById], references: [id])
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  logs AssetLog[]
+
+  @@index([isDeleted])
+  @@index([scheduledPurgeAt])
+  @@index([category])
+}
+
+model AssetLog {
+  id          String   @id @default(cuid())
+  assetId     String
+  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  action      String   // "CREATE" | "UPDATE" | "TRASH" | "RESTORE"
+  changedById String
+  changedBy   User     @relation(fields: [changedById], references: [id])
+  changes     Json?    // Detailed diff: { quantity: { old: 5, new: 3 }, ... }
+  notes       String?  // Optional audit note / reason
+  createdAt   DateTime @default(now())
+
+  @@index([assetId])
+  @@index([changedById])
+  @@index([createdAt])
+}
+
+

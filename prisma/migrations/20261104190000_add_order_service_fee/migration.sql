@@ -1,0 +1,3 @@
+-- AlterTable Order
+ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "serviceFee" DECIMAL(10,2) NOT NULL DEFAULT 0;
+

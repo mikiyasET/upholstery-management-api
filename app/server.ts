@@ -12,6 +12,7 @@ import ordersRouter from './modules/orders/orders.router';
 import directSalesRouter from './modules/direct-sales/direct-sales.router';
 import usersRouter from './modules/users-employees/users.router';
 import reportsRouter from './modules/reports/reports.router';
+import assetsRouter from './modules/assets/assets.router';
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use('/orders', ordersRouter);
 app.use('/direct-sales', directSalesRouter);
 app.use('/users', usersRouter);
 app.use('/reports', reportsRouter);
+app.use('/assets', assetsRouter);
 
 // Central error handler should be last
 app.use(errorHandler);

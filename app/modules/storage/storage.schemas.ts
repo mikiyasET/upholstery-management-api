@@ -6,6 +6,7 @@ export const restockSchema = z.object({
     quantityAdded: z.number().positive(),
     unitCost: z.number().min(0).optional().nullable(),
     supplierId: z.string().optional().nullable(),
+    materialBrandId: z.string().optional().nullable(),
   }),
 });
 
@@ -15,6 +16,7 @@ export const adjustStockSchema = z.object({
     quantityDelta: z.number(), // can be positive or negative
     reason: z.nativeEnum(AdjustmentReason),
     notes: z.string().optional().nullable(),
+    materialBrandId: z.string().optional().nullable(),
   }),
 });
 
@@ -25,6 +27,7 @@ export const storeTransferSchema = z.object({
     notes: z.string().optional().nullable(),
     responsibleEmployeeId: z.string().optional().nullable(),
     direction: z.string().optional(),
+    materialBrandId: z.string().optional().nullable(),
   }),
 });
 
@@ -33,6 +36,18 @@ export const stockCountSchema = z.object({
     materialId: z.string().min(1),
     storeId: z.string().min(1),
     countedQuantity: z.number().min(0),
+    notes: z.string().optional().nullable(),
+    materialBrandId: z.string().optional().nullable(),
+  }),
+});
+
+export const allocateBrandStockSchema = z.object({
+  body: z.object({
+    storeType: z.enum(['MAIN', 'MINI']),
+    allocations: z.array(z.object({
+      materialBrandId: z.string().min(1),
+      quantity: z.number().min(0),
+    })).min(1),
     notes: z.string().optional().nullable(),
   }),
 });

@@ -2,7 +2,10 @@ import prisma from '../../lib/prisma';
 import { AuditService } from '../../lib/audit';
 import { StorageService } from '../storage/storage.service';
 import { CustomersVehiclesService } from '../customers-vehicles/customers-vehicles.service';
+import { DailyStatsService } from '../reports/daily-stats.service';
 import { AuditAction, StoreType } from '@prisma/client';
+import { validateQuantityForUnit } from '../../lib/units';
+import { checkMaterialBrandAllocation } from '../../lib/brand-stock';
 
 export class DirectSalesService {
   static async createDirectSale(data: any, userId: string) {
@@ -25,27 +28,68 @@ export class DirectSalesService {
       if (!miniStore) throw new Error('Mini store not found');
 
       const insufficientItems: string[] = [];
+      const totalNeededPerMaterial = new Map<string, { material: any; totalNeeded: number }>();
       for (const item of data.items) {
-        const material = await tx.material.findUnique({ where: { id: item.materialId } });
+        const material = await tx.material.findFirst({
+          where: {
+            OR: [{ id: item.materialId }, { itemCode: item.materialId }],
+          },
+        });
         if (!material) throw new Error(`Material ${item.materialId} not found`);
+        validateQuantityForUnit(item.quantity, material.unit, `Quantity for material "${material.nameEn}"`);
+        await checkMaterialBrandAllocation(tx, material.id, StoreType.MINI, 'sell');
+        item.materialId = material.id;
 
+        const current = totalNeededPerMaterial.get(material.id) || { material, totalNeeded: 0 };
+        current.totalNeeded += item.quantity;
+        totalNeededPerMaterial.set(material.id, current);
+      }
+
+      for (const [matId, entry] of totalNeededPerMaterial.entries()) {
         const stock = await tx.materialStock.findUnique({
-          where: { materialId_storeId: { materialId: item.materialId, storeId: miniStore.id } },
+          where: { materialId_storeId: { materialId: matId, storeId: miniStore.id } },
         });
         const available = stock?.quantity?.toNumber() || 0;
-        if (available < item.quantity) {
-          insufficientItems.push(`${material.nameEn}: need ${item.quantity}, only ${available} available`);
+        if (available < entry.totalNeeded) {
+          insufficientItems.push(`${entry.material.nameEn}: need ${entry.totalNeeded}, only ${available} available`);
         }
       }
+
+      // Also validate individual brand stocks if items have materialBrandId
+      for (const item of data.items) {
+        if (item.materialBrandId) {
+          const brandStock = await tx.materialBrandStock.findUnique({
+            where: { materialBrandId_storeId: { materialBrandId: item.materialBrandId, storeId: miniStore.id } },
+          });
+          const available = brandStock?.quantity?.toNumber() || 0;
+          if (available < item.quantity) {
+            insufficientItems.push(`${item.brandName || 'Brand'}: need ${item.quantity}, only ${available} available`);
+          }
+        }
+      }
+
       if (insufficientItems.length > 0) {
         throw new Error(`Insufficient stock:\n${insufficientItems.join('\n')}`);
       }
 
       for (const item of data.items) {
+        let brandName = item.brandName || null;
+        let sizeName = item.sizeName || null;
+        if (item.materialBrandId) {
+          const b = await tx.materialBrand.findUnique({ where: { id: item.materialBrandId } });
+          if (b) {
+            brandName = brandName || b.name;
+            sizeName = sizeName || b.size;
+          }
+        }
+
         const net = (item.quantity * item.unitPrice) - item.discount;
         subtotal += net;
         itemsData.push({
           materialId: item.materialId,
+          materialBrandId: item.materialBrandId || null,
+          brandName,
+          sizeName,
           quantity: item.quantity,
           priceAtSaleTime: item.unitPrice,
         });
@@ -98,19 +142,20 @@ export class DirectSalesService {
       // Deduct stock from MINI store (miniStore already fetched during validation)
 
       for (const item of data.items) {
-        await StorageService.updateMaterialStock(tx, item.materialId, miniStore.id, -item.quantity);
+        await StorageService.updateMaterialStock(tx, item.materialId, miniStore.id, -item.quantity, item.materialBrandId);
       }
 
       // Re-fetch with payments included
       const fullSale = await tx.directSale.findUnique({
         where: { id: sale.id },
         include: {
-          lines: { include: { material: true } },
+          lines: { include: { material: true, materialBrand: true } },
           payments: true,
         },
       });
 
       await AuditService.record('DirectSale', sale.id, AuditAction.CREATE, userId, null, fullSale);
+      await DailyStatsService.recordDirectSale(totalPaid, sale.saleDateTime, tx);
       return fullSale;
     });
   }
@@ -128,7 +173,7 @@ export class DirectSalesService {
 
       // 1. Restore old stock
       for (const oldLine of existingSale.lines) {
-        await StorageService.updateMaterialStock(tx, oldLine.materialId, miniStore.id, Number(oldLine.quantity));
+        await StorageService.updateMaterialStock(tx, oldLine.materialId, miniStore.id, Number(oldLine.quantity), oldLine.materialBrandId);
       }
 
       // 2. Clear old lines and payments
@@ -145,18 +190,30 @@ export class DirectSalesService {
       let subtotal = 0;
       const itemsData: any[] = [];
       const insufficientItems: string[] = [];
-
-      // Validate stock availability in Mini Store
+      const totalNeededPerMaterial = new Map<string, { material: any; totalNeeded: number }>();
       for (const item of data.items) {
-        const material = await tx.material.findUnique({ where: { id: item.materialId } });
+        const material = await tx.material.findFirst({
+          where: {
+            OR: [{ id: item.materialId }, { itemCode: item.materialId }],
+          },
+        });
         if (!material) throw new Error(`Material ${item.materialId} not found`);
+        validateQuantityForUnit(item.quantity, material.unit, `Quantity for material "${material.nameEn}"`);
+        await checkMaterialBrandAllocation(tx, material.id, StoreType.MINI, 'sell');
+        item.materialId = material.id;
 
+        const current = totalNeededPerMaterial.get(material.id) || { material, totalNeeded: 0 };
+        current.totalNeeded += item.quantity;
+        totalNeededPerMaterial.set(material.id, current);
+      }
+
+      for (const [matId, entry] of totalNeededPerMaterial.entries()) {
         const stock = await tx.materialStock.findUnique({
-          where: { materialId_storeId: { materialId: item.materialId, storeId: miniStore.id } },
+          where: { materialId_storeId: { materialId: matId, storeId: miniStore.id } },
         });
         const available = stock?.quantity?.toNumber() || 0;
-        if (available < item.quantity) {
-          insufficientItems.push(`${material.nameEn}: need ${item.quantity}, only ${available} available`);
+        if (available < entry.totalNeeded) {
+          insufficientItems.push(`${entry.material.nameEn}: need ${entry.totalNeeded}, only ${available} available`);
         }
       }
       
@@ -165,10 +222,23 @@ export class DirectSalesService {
       }
 
       for (const item of data.items) {
+        let brandName = item.brandName || null;
+        let sizeName = item.sizeName || null;
+        if (item.materialBrandId) {
+          const b = await tx.materialBrand.findUnique({ where: { id: item.materialBrandId } });
+          if (b) {
+            brandName = brandName || b.name;
+            sizeName = sizeName || b.size;
+          }
+        }
+
         const net = (item.quantity * item.unitPrice) - item.discount;
         subtotal += net;
         itemsData.push({
           materialId: item.materialId,
+          materialBrandId: item.materialBrandId || null,
+          brandName,
+          sizeName,
           quantity: item.quantity,
           priceAtSaleTime: item.unitPrice,
         });
@@ -213,15 +283,16 @@ export class DirectSalesService {
       }
 
       for (const item of data.items) {
-        await StorageService.updateMaterialStock(tx, item.materialId, miniStore.id, -item.quantity);
+        await StorageService.updateMaterialStock(tx, item.materialId, miniStore.id, -item.quantity, item.materialBrandId);
       }
 
       const fullSale = await tx.directSale.findUnique({
         where: { id: sale.id },
-        include: { lines: { include: { material: true } }, payments: true },
+        include: { lines: { include: { material: true, materialBrand: true } }, payments: true },
       });
 
       await AuditService.record('DirectSale', sale.id, AuditAction.UPDATE, userId, null, fullSale);
+      await DailyStatsService.syncStatsForDate(DailyStatsService.formatDateKey(sale.saleDateTime), tx);
       return fullSale;
     });
   }
@@ -242,7 +313,7 @@ export class DirectSalesService {
       where: { id },
       include: {
         createdBy: { select: { name: true } },
-        lines: { include: { material: true } },
+        lines: { include: { material: true, materialBrand: true } },
         payments: true,
       },
     });

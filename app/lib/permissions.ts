@@ -51,6 +51,12 @@ export const PERMISSION_KEYS = [
 
   // Reports
   'reports.view',
+
+  // Assets
+  'assets.view',
+  'assets.add',
+  'assets.edit',
+  'assets.remove',
 ] as const;
 
 export type PermissionKey = typeof PERMISSION_KEYS[number];
@@ -181,6 +187,17 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     description: 'Access the reports dashboard',
     permissions: [
       { key: 'reports.view', label: 'View Reports' },
+    ],
+  },
+  {
+    id: 'assets',
+    label: 'Company Assets',
+    description: 'Manage company owned tools, equipment, machines, and audit history',
+    permissions: [
+      { key: 'assets.view', label: 'View Assets' },
+      { key: 'assets.add', label: 'Add Assets' },
+      { key: 'assets.edit', label: 'Edit Assets' },
+      { key: 'assets.remove', label: 'Trash / Restore Assets' },
     ],
   },
 ];

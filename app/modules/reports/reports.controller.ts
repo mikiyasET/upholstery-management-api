@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { ReportsService } from './reports.service';
+import { DailyStatsService } from './daily-stats.service';
 
 export class ReportsController {
   static async getRevenue(req: Request, res: Response) {
@@ -59,4 +60,19 @@ export class ReportsController {
     const logs = await ReportsService.getAuditLogs(page, limit);
     res.json(logs);
   }
+
+  static async getDailyStats(req: Request, res: Response) {
+    const days = req.query.days ? parseInt(req.query.days as string) : undefined;
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+
+    const stats = await DailyStatsService.getDailyStats({ days, startDate, endDate });
+    res.json(stats);
+  }
+
+  static async syncDailyStats(req: Request, res: Response) {
+    const result = await DailyStatsService.syncAllHistoricalStats();
+    res.json(result);
+  }
 }
+

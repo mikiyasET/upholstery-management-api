@@ -18,6 +18,9 @@ router.post('/store-transfers', requirePermission('storage.edit'), validate(sche
 
 router.post('/stock-counts', requirePermission('storage.edit'), validate(schemas.stockCountSchema), StorageController.stockCount);
 
+router.post('/materials/:id/allocate-brand-stock', requirePermission('storage.edit'), validate(schemas.allocateBrandStockSchema), StorageController.allocateBrandStock);
+
+router.get('/history', requirePermission('storage.view'), StorageController.getAllStockHistory);
 router.get('/materials/:id/history', requirePermission('storage.view'), StorageController.getMaterialHistory);
 
 export default router;

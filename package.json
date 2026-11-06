@@ -7,9 +7,10 @@
     "start": "ts-node app/index.ts",
     "dev": "ts-node-dev --respawn --transpile-only app/index.ts",
     "build": "tsc",
-    "seed:all": "ts-node prisma/seed.ts && ts-node prisma/seed-catalog.ts",
+    "seed:all": "ts-node prisma/seed.ts && ts-node prisma/seed-catalog.ts && ts-node prisma/seed-orders-revenue.ts",
     "seed": "ts-node prisma/seed.ts",
-    "seed:catalog": "ts-node prisma/seed-catalog.ts"
+    "seed:catalog": "ts-node prisma/seed-catalog.ts",
+    "seed:orders": "ts-node prisma/seed-orders-revenue.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",
