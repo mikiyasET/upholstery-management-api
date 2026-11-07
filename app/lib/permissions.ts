@@ -13,6 +13,10 @@ export const PERMISSION_KEYS = [
   // Orders
   'orders.view',
   'orders.create',
+  'orders.status',
+  'orders.payment',
+  'orders.edit',
+  'orders.delete',
 
   // Direct Sales
   'directSales.view',
@@ -25,6 +29,13 @@ export const PERMISSION_KEYS = [
 
   // Storage
   'storage.view',
+  'storage.restock',
+  'storage.transfer',
+  'storage.adjust',
+  'storage.count',
+  'storage.allocate',
+  'storage.history',
+  'storage.lowStock',
   'storage.edit',
 
   // Catalog — Materials
@@ -57,6 +68,10 @@ export const PERMISSION_KEYS = [
   'assets.add',
   'assets.edit',
   'assets.remove',
+
+  // Settings
+  'settings.view',
+  'settings.edit',
 ] as const;
 
 export type PermissionKey = typeof PERMISSION_KEYS[number];
@@ -103,6 +118,10 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     permissions: [
       { key: 'orders.view', label: 'View Orders' },
       { key: 'orders.create', label: 'Create Orders' },
+      { key: 'orders.status', label: 'Update Order Status' },
+      { key: 'orders.payment', label: 'Record Payments' },
+      { key: 'orders.edit', label: 'Edit Order Services & Materials' },
+      { key: 'orders.delete', label: 'Cancel / Delete Orders' },
     ],
     numericField: {
       key: 'orders.limitCount',
@@ -122,21 +141,19 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ],
   },
   {
-    id: 'customers',
-    label: 'Customers',
-    description: 'View and manage customer profiles',
-    permissions: [
-      { key: 'customers.view', label: 'View Customers' },
-      { key: 'customers.edit', label: 'Edit Customers' },
-    ],
-  },
-  {
     id: 'storage',
-    label: 'Storage',
-    description: 'View stock levels and manage transfers, restocks, adjustments',
+    label: 'Storage & Inventory',
+    description: 'View stock levels and manage transfers, restocks, adjustments, and audits',
     permissions: [
       { key: 'storage.view', label: 'View Stock' },
-      { key: 'storage.edit', label: 'Edit Stock (Transfers, Restocks)' },
+      { key: 'storage.restock', label: 'Restock Inventory' },
+      { key: 'storage.transfer', label: 'Store Transfers' },
+      { key: 'storage.adjust', label: 'Stock Adjustments' },
+      { key: 'storage.count', label: 'Physical Counts / Audits' },
+      { key: 'storage.allocate', label: 'Allocate Brand Stocks' },
+      { key: 'storage.history', label: 'View Stock History' },
+      { key: 'storage.lowStock', label: 'View Low Stock Alerts' },
+      { key: 'storage.edit', label: 'Full Stock Modification Access' },
     ],
   },
   {
@@ -173,6 +190,34 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ],
   },
   {
+    id: 'assets',
+    label: 'Company Assets',
+    description: 'Manage company owned tools, equipment, machines, and audit history',
+    permissions: [
+      { key: 'assets.view', label: 'View Assets' },
+      { key: 'assets.add', label: 'Add Assets' },
+      { key: 'assets.edit', label: 'Edit Assets' },
+      { key: 'assets.remove', label: 'Trash / Restore Assets' },
+    ],
+  },
+  {
+    id: 'customers',
+    label: 'Customers',
+    description: 'View and manage customer profiles and vehicle history',
+    permissions: [
+      { key: 'customers.view', label: 'View Customers' },
+      { key: 'customers.edit', label: 'Edit Customers' },
+    ],
+  },
+  {
+    id: 'reports',
+    label: 'Reports & Analytics',
+    description: 'Access the business reports and analytics dashboard',
+    permissions: [
+      { key: 'reports.view', label: 'View Reports' },
+    ],
+  },
+  {
     id: 'users',
     label: 'Users & Employees',
     description: 'View and manage user accounts and employee profiles',
@@ -182,22 +227,12 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ],
   },
   {
-    id: 'reports',
-    label: 'Reports',
-    description: 'Access the reports dashboard',
+    id: 'settings',
+    label: 'Settings',
+    description: 'Manage workshop identity, number sequences, and security controls',
     permissions: [
-      { key: 'reports.view', label: 'View Reports' },
-    ],
-  },
-  {
-    id: 'assets',
-    label: 'Company Assets',
-    description: 'Manage company owned tools, equipment, machines, and audit history',
-    permissions: [
-      { key: 'assets.view', label: 'View Assets' },
-      { key: 'assets.add', label: 'Add Assets' },
-      { key: 'assets.edit', label: 'Edit Assets' },
-      { key: 'assets.remove', label: 'Trash / Restore Assets' },
+      { key: 'settings.view', label: 'View Settings' },
+      { key: 'settings.edit', label: 'Edit Workshop Settings' },
     ],
   },
 ];
