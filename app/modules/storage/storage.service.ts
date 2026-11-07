@@ -77,7 +77,7 @@ export class StorageService {
     });
   }
 
-  static async restock(materialId: string, data: any, userId: string) {
+  static async restock(materialId: string, data: any, userId: string): Promise<any> {
     return prisma.$transaction(async (tx) => {
       const material = await tx.material.findFirst({
         where: {
@@ -86,6 +86,65 @@ export class StorageService {
         include: { brands: true },
       });
       if (!material) throw new Error('Material not found');
+
+      let store: any = null;
+      if (data.storeId) {
+        store = await tx.store.findUnique({ where: { id: data.storeId } });
+      } else if (data.storeType) {
+        store = await tx.store.findUnique({ where: { type: data.storeType } });
+      } else {
+        // Default to MAIN store, or fallback to MINI store
+        store = await tx.store.findUnique({ where: { type: StoreType.MAIN } }) ||
+                await tx.store.findUnique({ where: { type: StoreType.MINI } });
+      }
+      if (!store) throw new Error('Target store not found');
+
+      // Batch restock for multiple brands
+      if (Array.isArray(data.items) && data.items.length > 0) {
+        const results = [];
+        for (const item of data.items) {
+          if (!item.quantityAdded || item.quantityAdded <= 0) continue;
+          validateQuantityForUnit(item.quantityAdded, material.unit, 'Quantity added');
+
+          let brandName: string | undefined = undefined;
+          let sizeName: string | undefined = undefined;
+          let colorName: string | undefined = undefined;
+          let typeName: string | undefined = undefined;
+          let brandId: string | undefined = undefined;
+
+          if (item.materialBrandId) {
+            const brand = material.brands?.find((b: any) => b.id === item.materialBrandId);
+            if (brand) {
+              brandId = brand.id;
+              brandName = brand.name;
+              sizeName = brand.size || undefined;
+              colorName = brand.color || undefined;
+              typeName = brand.type || undefined;
+            }
+          }
+
+          const restock = await tx.restock.create({
+            data: {
+              materialId: material.id,
+              materialBrandId: brandId,
+              brandName: brandName,
+              sizeName: sizeName,
+              colorName: colorName,
+              typeName: typeName,
+              storeId: store.id,
+              quantityAdded: item.quantityAdded,
+              unitCost: item.unitCost !== undefined && item.unitCost !== null ? item.unitCost : data.unitCost,
+              supplierId: data.supplierId,
+              recordedById: userId,
+            },
+          });
+
+          await this.updateMaterialStock(tx, material.id, store.id, item.quantityAdded, brandId);
+          await AuditService.record('Restock', restock.id, AuditAction.CREATE, userId, null, restock);
+          results.push(restock);
+        }
+        return results;
+      }
 
       validateQuantityForUnit(data.quantityAdded, material.unit, 'Quantity added');
 
@@ -104,18 +163,6 @@ export class StorageService {
           typeName = brand.type || undefined;
         }
       }
-
-      let store: any = null;
-      if (data.storeId) {
-        store = await tx.store.findUnique({ where: { id: data.storeId } });
-      } else if (data.storeType) {
-        store = await tx.store.findUnique({ where: { type: data.storeType } });
-      } else {
-        // Default to MAIN store, or fallback to MINI store
-        store = await tx.store.findUnique({ where: { type: StoreType.MAIN } }) ||
-                await tx.store.findUnique({ where: { type: StoreType.MINI } });
-      }
-      if (!store) throw new Error('Target store not found');
 
       const restock = await tx.restock.create({
         data: {
@@ -404,8 +451,29 @@ export class StorageService {
         where: { materialId_storeId: { materialId: material.id, storeId: store.id } },
       });
 
-      // Update brand stocks
+      // Verify total allocated does not exceed acquired store stock
       let newTotalBrandStock = 0;
+      for (const alloc of data.allocations) {
+        newTotalBrandStock += alloc.quantity;
+      }
+      const allocatedBrandIdSet = new Set(data.allocations.map((a) => a.materialBrandId));
+      for (const b of material.brands) {
+        if (!allocatedBrandIdSet.has(b.id)) {
+          const eb = existingBrandStocks.find((s) => s.materialBrandId === b.id);
+          if (eb) {
+            newTotalBrandStock += eb.quantity.toNumber();
+          }
+        }
+      }
+
+      const acquiredStock = previousTotalStock?.quantity ? previousTotalStock.quantity.toNumber() : 0;
+      if (newTotalBrandStock > acquiredStock) {
+        throw new Error(
+          `Total allocated quantity (${newTotalBrandStock}) cannot exceed acquired store stock (${acquiredStock})`
+        );
+      }
+
+      // Update brand stocks
       const allocatedSummary: string[] = [];
 
       for (const alloc of data.allocations) {
@@ -424,21 +492,9 @@ export class StorageService {
             quantity: alloc.quantity,
           },
         });
-        newTotalBrandStock += alloc.quantity;
         const labelParts = [brand.name, brand.size, brand.color, brand.type].filter(Boolean);
         const brandLabel = labelParts.join(' • ');
         allocatedSummary.push(`${brandLabel}: ${alloc.quantity}`);
-      }
-
-      // If there are other brands belonging to this material not in allocations, include their current stock
-      const allocatedBrandIdSet = new Set(data.allocations.map((a) => a.materialBrandId));
-      for (const b of material.brands) {
-        if (!allocatedBrandIdSet.has(b.id)) {
-          const eb = existingBrandStocks.find((s) => s.materialBrandId === b.id);
-          if (eb) {
-            newTotalBrandStock += eb.quantity.toNumber();
-          }
-        }
       }
 
       // Synchronize parent MaterialStock with sum of brands

@@ -196,6 +196,39 @@ describe('StorageService - Brand Stock Management', () => {
       }));
       expect(res.id).toBe('restock-nonbulk-mini');
     });
+
+    it('allows batch restocking multiple brands with bought prices in a single call', async () => {
+      (prisma.material.findFirst as jest.Mock).mockResolvedValue(mockMaterial);
+      (prisma.store.findUnique as jest.Mock).mockResolvedValue(mockMainStore);
+      (prisma.materialBrandStock.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.materialStock.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.restock.create as jest.Mock).mockImplementation(({ data }) => Promise.resolve({ id: `r-${data.materialBrandId}`, ...data }));
+
+      const res = await StorageService.restock('mat-1', {
+        storeType: StoreType.MAIN,
+        items: [
+          { materialBrandId: 'brand-abro', quantityAdded: 10, unitCost: 180 },
+          { materialBrandId: 'brand-flam', quantityAdded: 20, unitCost: 240 },
+        ],
+      }, 'user-1');
+
+      expect(Array.isArray(res)).toBe(true);
+      expect(res).toHaveLength(2);
+      expect(prisma.restock.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          materialBrandId: 'brand-abro',
+          quantityAdded: 10,
+          unitCost: 180,
+        }),
+      }));
+      expect(prisma.restock.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          materialBrandId: 'brand-flam',
+          quantityAdded: 20,
+          unitCost: 240,
+        }),
+      }));
+    });
   });
 
   describe('storeTransfer with brand', () => {
@@ -511,6 +544,25 @@ describe('StorageService - Brand Stock Management', () => {
       }, 'user-1');
 
       expect(res.totalQuantity).toBe(10);
+    });
+
+    it('blocks over-entry when total allocated exceeds acquired store stock', async () => {
+      (prisma.material.findFirst as jest.Mock).mockResolvedValue(mockMaterial);
+      (prisma.store.findUnique as jest.Mock).mockResolvedValue(mockMainStore);
+      (prisma.materialBrandStock.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.materialStock.findUnique as jest.Mock).mockResolvedValue({
+        quantity: new Decimal(50),
+      });
+
+      await expect(
+        StorageService.allocateBrandStock('mat-1', {
+          storeType: 'MAIN',
+          allocations: [
+            { materialBrandId: 'brand-abro', quantity: 30 },
+            { materialBrandId: 'brand-flam', quantity: 25 },
+          ],
+        }, 'user-1')
+      ).rejects.toThrow(/Total allocated quantity \(55\) cannot exceed acquired store stock \(50\)/);
     });
   });
 

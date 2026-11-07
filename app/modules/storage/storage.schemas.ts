@@ -3,12 +3,21 @@ import { AdjustmentReason, StoreType } from '@prisma/client';
 
 export const restockSchema = z.object({
   body: z.object({
-    quantityAdded: z.number().positive(),
+    quantityAdded: z.number().positive().optional(),
     unitCost: z.number().min(0).optional().nullable(),
     supplierId: z.string().optional().nullable(),
     materialBrandId: z.string().optional().nullable(),
     storeType: z.nativeEnum(StoreType).optional().nullable(),
     storeId: z.string().optional().nullable(),
+    items: z.array(z.object({
+      materialBrandId: z.string().min(1),
+      quantityAdded: z.number().positive(),
+      unitCost: z.number().min(0).optional().nullable(),
+    })).optional(),
+  }).refine((data) => {
+    return (data.quantityAdded !== undefined && data.quantityAdded > 0) || (Array.isArray(data.items) && data.items.length > 0);
+  }, {
+    message: 'Either quantityAdded or items must be provided with positive quantities',
   }),
 });
 
