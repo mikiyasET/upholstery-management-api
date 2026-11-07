@@ -134,6 +134,68 @@ describe('StorageService - Brand Stock Management', () => {
 
       expect(res.id).toBe('restock-1');
     });
+
+    it('allows restocking a non-bulk-tracked material into Main Store when specified', async () => {
+      const nonBulkMaterial = { ...mockMaterial, isBulkTracked: false };
+      (prisma.material.findFirst as jest.Mock).mockResolvedValue(nonBulkMaterial);
+      (prisma.store.findUnique as jest.Mock).mockResolvedValue(mockMainStore);
+      (prisma.materialBrandStock.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.materialStock.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.restock.create as jest.Mock).mockResolvedValue({
+        id: 'restock-nonbulk-main',
+        materialId: 'mat-1',
+        materialBrandId: 'brand-abro',
+        storeId: 'store-main',
+        quantityAdded: 10,
+      });
+
+      const res = await StorageService.restock('mat-1', {
+        quantityAdded: 10,
+        unitCost: 150,
+        materialBrandId: 'brand-abro',
+        storeType: StoreType.MAIN,
+      }, 'user-1');
+
+      expect(prisma.store.findUnique).toHaveBeenCalledWith({ where: { type: StoreType.MAIN } });
+      expect(prisma.restock.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          storeId: 'store-main',
+          quantityAdded: 10,
+        }),
+      }));
+      expect(res.id).toBe('restock-nonbulk-main');
+    });
+
+    it('allows restocking into Mini Store when storeType MINI is specified', async () => {
+      const nonBulkMaterial = { ...mockMaterial, isBulkTracked: false };
+      (prisma.material.findFirst as jest.Mock).mockResolvedValue(nonBulkMaterial);
+      (prisma.store.findUnique as jest.Mock).mockResolvedValue(mockMiniStore);
+      (prisma.materialBrandStock.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.materialStock.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.restock.create as jest.Mock).mockResolvedValue({
+        id: 'restock-nonbulk-mini',
+        materialId: 'mat-1',
+        materialBrandId: 'brand-abro',
+        storeId: 'store-mini',
+        quantityAdded: 10,
+      });
+
+      const res = await StorageService.restock('mat-1', {
+        quantityAdded: 10,
+        unitCost: 150,
+        materialBrandId: 'brand-abro',
+        storeType: StoreType.MINI,
+      }, 'user-1');
+
+      expect(prisma.store.findUnique).toHaveBeenCalledWith({ where: { type: StoreType.MINI } });
+      expect(prisma.restock.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          storeId: 'store-mini',
+          quantityAdded: 10,
+        }),
+      }));
+      expect(res.id).toBe('restock-nonbulk-mini');
+    });
   });
 
   describe('storeTransfer with brand', () => {

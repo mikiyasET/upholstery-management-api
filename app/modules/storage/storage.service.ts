@@ -105,9 +105,17 @@ export class StorageService {
         }
       }
 
-      const targetStoreType = material.isBulkTracked ? StoreType.MAIN : StoreType.MINI;
-      const store = await tx.store.findUnique({ where: { type: targetStoreType } });
-      if (!store) throw new Error(`${targetStoreType} store not found`);
+      let store: any = null;
+      if (data.storeId) {
+        store = await tx.store.findUnique({ where: { id: data.storeId } });
+      } else if (data.storeType) {
+        store = await tx.store.findUnique({ where: { type: data.storeType } });
+      } else {
+        // Default to MAIN store, or fallback to MINI store
+        store = await tx.store.findUnique({ where: { type: StoreType.MAIN } }) ||
+                await tx.store.findUnique({ where: { type: StoreType.MINI } });
+      }
+      if (!store) throw new Error('Target store not found');
 
       const restock = await tx.restock.create({
         data: {

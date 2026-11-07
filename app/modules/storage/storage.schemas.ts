@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AdjustmentReason } from '@prisma/client';
+import { AdjustmentReason, StoreType } from '@prisma/client';
 
 export const restockSchema = z.object({
   body: z.object({
@@ -7,6 +7,8 @@ export const restockSchema = z.object({
     unitCost: z.number().min(0).optional().nullable(),
     supplierId: z.string().optional().nullable(),
     materialBrandId: z.string().optional().nullable(),
+    storeType: z.nativeEnum(StoreType).optional().nullable(),
+    storeId: z.string().optional().nullable(),
   }),
 });
 
