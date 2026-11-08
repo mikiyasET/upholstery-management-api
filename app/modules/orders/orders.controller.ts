@@ -134,8 +134,8 @@ export class OrdersController {
       const result = await OrdersService.notifyOrderCreated(req.params.id);
       res.json({ success: result });
     } catch (err: any) {
-      console.error('[OrdersController] Failed to notify telegram:', err.message);
-      res.status(500).json({ error: { message: err.message } });
+      console.error('[OrdersController] Failed to notify telegram:', err);
+      res.status(500).json({ error: { message: 'Failed to send Telegram notification' } });
     }
   }
 }

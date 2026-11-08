@@ -12,7 +12,7 @@ export class AuthService {
   static async login(phone: string, passwordPlain: string) {
     const user = await prisma.user.findUnique({ where: { phone } });
     if (!user || !user.isActive || !user.passwordHash) {
-      throw new Error('Invalid credentials');
+      throw new Error('Invalid phone number or password');
     }
 
     // Block EMPLOYEEs from logging in
@@ -22,7 +22,7 @@ export class AuthService {
 
     const valid = await argon2.verify(user.passwordHash, passwordPlain);
     if (!valid) {
-      throw new Error('Invalid credentials');
+      throw new Error('Invalid phone number or password');
     }
 
     const payload = {

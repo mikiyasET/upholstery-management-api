@@ -9,7 +9,20 @@ export class AuthController {
       const result = await AuthService.login(phone, password);
       res.json(result);
     } catch (error: any) {
-      res.status(401).json({ error: { message: error.message } });
+      if (
+        error.message === 'Invalid phone number or password' ||
+        error.message === 'Invalid credentials' ||
+        error.message === 'Employees cannot log in to the system'
+      ) {
+        return res.status(401).json({ error: { message: error.message } });
+      }
+
+      console.error('[AuthController.login] Server error during login:', error);
+      return res.status(500).json({
+        error: {
+          message: 'Unable to process login due to a server error. Please try again later.',
+        },
+      });
     }
   }
 
@@ -20,7 +33,19 @@ export class AuthController {
       const result = await AuthService.refresh(refreshToken);
       res.json(result);
     } catch (error: any) {
-      res.status(401).json({ error: { message: error.message } });
+      if (
+        error.message === 'Invalid or expired refresh token' ||
+        error.message === 'Employees cannot log in to the system'
+      ) {
+        return res.status(401).json({ error: { message: error.message } });
+      }
+
+      console.error('[AuthController.refresh] Server error during refresh:', error);
+      return res.status(500).json({
+        error: {
+          message: 'Unable to refresh session due to a server error.',
+        },
+      });
     }
   }
 
