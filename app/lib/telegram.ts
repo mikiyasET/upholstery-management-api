@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { formatEthiopianDeadline } from './ethiopian-calendar';
 
 export interface PlateData {
   category?: string;
@@ -390,22 +391,31 @@ export class TelegramService {
       addChargesSummary = `\n${addLines}`;
     }
 
-    // Deadline info
+    // Deadline Section (Prominently placed at the bottom of the work order)
     let deadlineSection = '';
     if (order.deadline) {
       const deadlineDate = new Date(order.deadline);
       const createdDate = new Date(order.createdAt || order.orderDateTime || Date.now());
       const durationMs = deadlineDate.getTime() - createdDate.getTime();
       const durationStr = this.formatDuration(durationMs);
-      const formattedDeadline = format(deadlineDate, 'MMM d, yyyy • h:mm a');
+      const formattedGregorian = format(deadlineDate, 'EEEE, MMM d, yyyy • h:mm a');
+      const formattedEthiopian = formatEthiopianDeadline(deadlineDate);
 
       deadlineSection = [
-        `${TG_ICONS.clock} <b>DEADLINE &amp; SCHEDULE:</b>`,
+        `${TG_ICONS.clock} <b>TARGET DELIVERY DEADLINE:</b>`,
         `<blockquote>`,
-        `⏰ <b>Target Delivery:</b> <b>${formattedDeadline}</b>`,
-        `⏳ <b>Allotted Time:</b> <code>${durationStr}</code>`,
-        `</blockquote>`,
+        `🇪🇹 <b>የኢትዮጵያ ቀን:</b> <b>${formattedEthiopian}</b>`,
+        `🌍 <b>Gregorian:</b> <b>${formattedGregorian}</b>`,
         ``,
+        `${TG_ICONS.hourglass} <b>Allotted Duration:</b> <code>${durationStr}</code>`,
+        `</blockquote>`,
+      ].join('\n');
+    } else {
+      deadlineSection = [
+        `${TG_ICONS.clock} <b>TARGET DELIVERY DEADLINE:</b>`,
+        `<blockquote>`,
+        `<i>⚠️ No delivery deadline specified for this order</i>`,
+        `</blockquote>`,
       ].join('\n');
     }
 
@@ -474,7 +484,6 @@ export class TelegramService {
       `   ↳ ${TG_ICONS.phone} <code>${customerPhone}</code>`,
       `</blockquote>`,
       ``,
-      deadlineSection ? deadlineSection : '',
       `${TG_ICONS.wrench} <b>WORK &amp; SERVICES (${services.length}):</b>`,
       `<blockquote expandable>`,
       servicesText,
@@ -513,6 +522,8 @@ export class TelegramService {
           ].join('\n')
         : '',
       paymentLines.join('\n'),
+      ``,
+      deadlineSection,
       ``,
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
       `🕒 <i>Created: ${format(new Date(order.createdAt || Date.now()), 'MMM d, yyyy • h:mm a')}</i>`,
@@ -560,6 +571,9 @@ export class TelegramService {
       })
       .join('\n');
 
+    const formattedGregorian = format(deadlineDate, 'EEEE, MMM d, yyyy • h:mm a');
+    const formattedEthiopian = formatEthiopianDeadline(deadlineDate);
+
     const message = [
       `${TG_ICONS.warning} <b>DEADLINE WARNING: ${percentStr}% TIME ELAPSED</b> ${TG_ICONS.fire}`,
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
@@ -580,7 +594,9 @@ export class TelegramService {
       `⏱️ <b>Total Allotted:</b> <code>${totalStr}</code>`,
       `⌛ <b>Time Elapsed:</b> <code>${elapsedStr}</code> (<b>${percentStr}%</b>)`,
       `🔴 <b>Time Remaining:</b> <b><code>${remainingStr}</code></b>`,
-      `🎯 <b>Target Deadline:</b> <b>${format(deadlineDate, 'MMM d, yyyy • h:mm a')}</b>`,
+      ``,
+      `🇪🇹 <b>የኢትዮጵያ ቀን:</b> <b>${formattedEthiopian}</b>`,
+      `🌍 <b>Target Deadline:</b> <b>${formattedGregorian}</b>`,
       `</blockquote>`,
       ``,
       services

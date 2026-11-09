@@ -172,6 +172,7 @@ describe('Telegram Formatting & Notification Service', () => {
         downPayment: 3000,
         payments: [{ amount: 3000 }],
         notes: 'Handle rear tailgate with care',
+        deadline: '2026-11-09T16:00:00+03:00',
       };
 
       const result = await TelegramService.sendOrderCreatedNotification(mockOrder);
@@ -218,6 +219,17 @@ describe('Telegram Formatting & Notification Service', () => {
 
       // Verify Notes
       expect(sentMessage).toContain('Handle rear tailgate with care');
+
+      // Verify Deadline Section at the bottom with Ethiopian and Gregorian calendar
+      expect(sentMessage).toContain('TARGET DELIVERY DEADLINE:');
+      expect(sentMessage).toContain('የኢትዮጵያ ቀን:');
+      expect(sentMessage).toContain('ጥቅምት 30, 2019 ዓ.ም');
+      expect(sentMessage).toContain('Gregorian:');
+
+      // Verify Deadline appears after Financials (at the bottom)
+      const financialIndex = sentMessage.indexOf('FINANCIAL &amp; PAYMENT BREAKDOWN:');
+      const deadlineIndex = sentMessage.indexOf('TARGET DELIVERY DEADLINE:');
+      expect(deadlineIndex).toBeGreaterThan(financialIndex);
 
       // Verify Telegram Modern tags
       expect(sentMessage).toContain('<blockquote>');
