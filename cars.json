@@ -360,6 +360,57 @@
                 { "name": "Lyriq", "image": "lyriq.png" },
                 { "name": "OPTIQ", "image": "optiq.png" }
             ]
+        },
+        {
+            "name": "Changan",
+            "logo": "Changan.png",
+            "assetFolder": "Changan",
+            "models": [
+                { "name": "Alsvin", "image": "Alsvin.png" },
+                { "name": "Avatr 06", "image": "AVATR-06.png" },
+                { "name": "Avatr 07", "image": "AVATR-07.png" },
+                { "name": "Avatr 011 MMW", "image": "AVATR-MMW.png" },
+                { "name": "Avatr 012", "image": "AVATR-012.png" },
+                { "name": "Avatr 11", "image": "AVATR-11.png" },
+                { "name": "Avatr 12", "image": "AVATR-12.png" },
+                { "name": "Benben E-Star", "image": "Benben-E-Star.png" },
+                { "name": "CS35", "image": "CS35.png" },
+                { "name": "CS55 Plus", "image": "CS55-Plus.png" },
+                { "name": "CS75 Plus", "image": "CS75-Plus.png" },
+                { "name": "CS95", "image": "CS95.png" },
+                { "name": "Deepal G318", "image": "deepal-G318.png" },
+                { "name": "Deepal L07", "image": "deepal-L07.png" },
+                { "name": "Deepal S05", "image": "deepal-S05.png" },
+                { "name": "Deepal S07", "image": "deepal-S07.png" },
+                { "name": "Deepal S09", "image": "deepal-S09.png" },
+                { "name": "Eado", "image": "Eado.png" },
+                { "name": "Lumin", "image": "Lumin.png" },
+                { "name": "Nevo A05", "image": "Nevo-A05.png" },
+                { "name": "Nevo A06", "image": "Nevo-A06.png" },
+                { "name": "Nevo A07", "image": "Nevo-A07.png" },
+                { "name": "Nevo E07", "image": "Nevo-E07.png" },
+                { "name": "Nevo Hunter K50", "image": "Nevo-Hunter-K50.png" },
+                { "name": "Nevo Q05", "image": "Nevo-Q05.png" },
+                { "name": "Nevo Q07", "image": "Nevo-Q07.png" },
+                { "name": "Raeton", "image": "Raeton.png" },
+                { "name": "UNI-K", "image": "UNI-K.png" },
+                { "name": "UNI-T", "image": "UNI-T.png" },
+                { "name": "UNI-V", "image": "UNI-V.png" },
+                { "name": "UNI-Z", "image": "UNI-Z.png" },
+                { "name": "X5 Plus", "image": "X5-Plus.png" },
+                { "name": "X7 Plus", "image": "X7-Plus.png" }
+            ]
+        },
+        {
+            "name": "Lincoln",
+            "logo": "lincoln.png",
+            "assetFolder": "Lincoln",
+            "models": [
+                { "name": "Aviator", "image": "Aviator.png" },
+                { "name": "Corsair", "image": "Corsair.png" },
+                { "name": "Nautilus", "image": "Nautilus.png" },
+                { "name": "Navigator", "image": "Navigator.png" }
+            ]
         }
     ]
 }

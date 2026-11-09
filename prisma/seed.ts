@@ -118,7 +118,8 @@ async function main() {
       });
 
       let brandLogoPath = brand?.logoUrl || undefined;
-      if (!brandLogoPath && brandData.logo) {
+      const brandLogoMissing = brand?.logoUrl ? !fs.existsSync(path.join(process.cwd(), 'uploads', brand.logoUrl)) : false;
+      if ((!brandLogoPath || brandLogoMissing) && brandData.logo) {
         brandLogoPath = copyImageToUploads(
           path.join(assetsBasePath, 'brands'),
           brandData.logo,
@@ -153,6 +154,8 @@ async function main() {
             },
           });
 
+          const modelImageMissing = existingModel?.imageUrl ? !fs.existsSync(path.join(process.cwd(), 'uploads', existingModel.imageUrl)) : false;
+
           if (!existingModel) {
             let modelImagePath: string | undefined;
             if (modelData.image) {
@@ -171,7 +174,7 @@ async function main() {
               },
             });
             console.log(`  + Model: ${brandData.name} ${modelData.name}`);
-          } else if (modelData.image && !existingModel.imageUrl) {
+          } else if (modelData.image && (!existingModel.imageUrl || modelImageMissing)) {
             const modelImagePath = copyImageToUploads(
               modelsAssetDir,
               modelData.image,
@@ -182,6 +185,7 @@ async function main() {
                 where: { id: existingModel.id },
                 data: { imageUrl: modelImagePath },
               });
+              console.log(`  ✓ Updated image for model: ${brandData.name} ${modelData.name}`);
             }
           }
         }
