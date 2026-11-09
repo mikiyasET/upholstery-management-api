@@ -151,3 +151,4 @@ export function formatEthiopianDeadline(dateInput: Date | string | number): stri
   const minuteStr = eth.minute < 10 ? `0${eth.minute}` : `${eth.minute}`;
   return `${eth.monthNameAm} ${eth.day}, ${eth.year} ዓ.ም (${eth.hour}:${minuteStr} ${eth.periodAm})`;
 }
+

@@ -53,3 +53,4 @@ describe('Ethiopian Calendar Conversion', () => {
     expect(formatted).toBe('ጥቅምት 30, 2019 ዓ.ም (10:00 ከሰዓት)');
   });
 });
+

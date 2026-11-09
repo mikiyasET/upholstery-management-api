@@ -165,6 +165,9 @@ export const TG_ICONS = {
   deposit: '<tg-emoji emoji-id="5443127283898405358">📥</tg-emoji>',
   pin: '<tg-emoji emoji-id="6269321542442685793">📌</tg-emoji>',
   chart: '<tg-emoji emoji-id="6269397073737553354">📊</tg-emoji>',
+  ethiopian: '<tg-emoji emoji-id="5269679685393989166">🇪🇹</tg-emoji>',
+  global: '<tg-emoji emoji-id="5465166522030764559">🐈‍⬛</tg-emoji>',
+  tire: '<tg-emoji emoji-id="5377521684221815300">🛞</tg-emoji>'
 };
 
 export class TelegramService {
@@ -404,8 +407,8 @@ export class TelegramService {
       deadlineSection = [
         `${TG_ICONS.clock} <b>TARGET DELIVERY DEADLINE:</b>`,
         `<blockquote>`,
-        `🇪🇹 <b>የኢትዮጵያ ቀን:</b> <b>${formattedEthiopian}</b>`,
-        `🌍 <b>Gregorian:</b> <b>${formattedGregorian}</b>`,
+        `${TG_ICONS.ethiopian} <b>የኢትዮጵያ ቀን:</b> <b>${formattedEthiopian}</b>`,
+        `${TG_ICONS.global} <b>Gregorian:</b> <b>${formattedGregorian}</b>`,
         ``,
         `${TG_ICONS.hourglass} <b>Allotted Duration:</b> <code>${durationStr}</code>`,
         `</blockquote>`,
@@ -456,7 +459,7 @@ export class TelegramService {
       paymentLines.push(`🏛️ <b>Tax / VAT:</b> <code>+${formatETB(tax)}</code>`);
     }
 
-    paymentLines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    paymentLines.push(`━━━━━━━━━━━━━━━━━`);
     paymentLines.push(`${TG_ICONS.card} <b>GRAND TOTAL:</b> <b><code>${formatETB(total)}</code></b>`);
     paymentLines.push(``); // Spacing before deposit
     paymentLines.push(`${TG_ICONS.deposit} <b>Down Payment:</b> <code>${formatETB(downPayment)}</code> <i>(Deducted)</i>`);
@@ -471,8 +474,8 @@ export class TelegramService {
     paymentLines.push(`</blockquote>`);
 
     const message = [
-      `${TG_ICONS.car} <b>NEW WORK ORDER CREATED</b>`,
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      `${TG_ICONS.tire} <b>NEW WORK ORDER CREATED</b>`,
+      `━━━━━━━━━━━━━━━━━`,
       `<blockquote>`,
       `${TG_ICONS.clipboard} <b>Order Number:</b> <code>#${escapeHtml(order.orderNumber)}</code>`,
       order.fsrNumber ? `${TG_ICONS.fsr} <b>FSR Number:</b> <code>${escapeHtml(order.fsrNumber)}</code>` : '',
@@ -525,7 +528,7 @@ export class TelegramService {
       ``,
       deadlineSection,
       ``,
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      `━━━━━━━━━━━━━━━━━`,
       `🕒 <i>Created: ${format(new Date(order.createdAt || Date.now()), 'MMM d, yyyy • h:mm a')}</i>`,
     ]
       .filter((line) => line !== null && line !== undefined)
@@ -576,7 +579,7 @@ export class TelegramService {
 
     const message = [
       `${TG_ICONS.warning} <b>DEADLINE WARNING: ${percentStr}% TIME ELAPSED</b> ${TG_ICONS.fire}`,
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      `━━━━━━━━━━━━━━━━━`,
       `<blockquote>`,
       `🚨 <b>Urgent Attention Required!</b>`,
       `${TG_ICONS.clipboard} <b>Order Number:</b> <code>#${escapeHtml(order.orderNumber)}</code>`,
@@ -595,8 +598,8 @@ export class TelegramService {
       `⌛ <b>Time Elapsed:</b> <code>${elapsedStr}</code> (<b>${percentStr}%</b>)`,
       `🔴 <b>Time Remaining:</b> <b><code>${remainingStr}</code></b>`,
       ``,
-      `🇪🇹 <b>የኢትዮጵያ ቀን:</b> <b>${formattedEthiopian}</b>`,
-      `🌍 <b>Target Deadline:</b> <b>${formattedGregorian}</b>`,
+      `${TG_ICONS.ethiopian} <b>የኢትዮጵያ ቀን:</b> <b>${formattedEthiopian}</b>`,
+      `${TG_ICONS.global} <b>Target Deadline:</b> <b>${formattedGregorian}</b>`,
       `</blockquote>`,
       ``,
       services
@@ -617,7 +620,7 @@ export class TelegramService {
             ``,
           ].join('\n')
         : '',
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      `━━━━━━━━━━━━━━━━━`,
       `⚡ <i>Please prioritize completion of this order to avoid delivery delay!</i>`,
     ]
       .filter((line) => line !== null && line !== undefined)
