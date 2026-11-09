@@ -22,7 +22,7 @@
                 { "name": "Land Cruiser Prado", "image": "LandCruiser-Prado.png" },
                 { "name": "Platz", "image": "platz.png" },
                 { "name": "Prius", "image": "prius.png" },
-                { "name": "RAV4", "image": "RAV4.png" },
+                { "name": "RAV4", "image": "rav4.png" },
                 { "name": "Rush", "image": "rush.png" },
                 { "name": "Raize", "image": "raize.png" },
                 { "name": "Tacoma", "image": "tacoma.png" },
@@ -301,7 +301,7 @@
             "assetFolder": "Mitsubishi",
             "models": [
                 { "name": "Attrage", "image": "attrage.png" },
-                { "name": "L200", "image": "l200.png" },
+                { "name": "L200", "image": "L200.png" },
                 { "name": "Lancer", "image": "lancer.png" },
                 { "name": "Outlander", "image": "outlander.png" },
                 { "name": "Pajero", "image": "pajero.png" },

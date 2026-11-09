@@ -65,6 +65,42 @@ function normalizeR2Url(
 }
 
 /**
+ * Generates potential R2 URL candidates to handle case sensitivity differences
+ * (e.g. rav4.png vs RAV4.png, l200.png vs L200.png) and path prefixes (/car-assets/ vs root).
+ */
+function generateUrlCandidates(url: string): string[] {
+  const candidates: string[] = [url];
+  try {
+    const parsed = new URL(url);
+    const pathname = parsed.pathname;
+    const lastSlash = pathname.lastIndexOf('/');
+    if (lastSlash !== -1) {
+      const dir = pathname.substring(0, lastSlash + 1);
+      const file = pathname.substring(lastSlash + 1);
+      const lower = file.toLowerCase();
+      const upper = file.toUpperCase();
+      const cap = file.charAt(0).toUpperCase() + file.slice(1);
+      for (const v of [lower, upper, cap]) {
+        if (v !== file) candidates.push(`${parsed.origin}${dir}${v}`);
+      }
+    }
+    const withAndWithout: string[] = [];
+    for (const c of candidates) {
+      withAndWithout.push(c);
+      if (c.includes('/car-assets/')) {
+        withAndWithout.push(c.replace('/car-assets/', '/'));
+      } else {
+        const u = new URL(c);
+        withAndWithout.push(`${u.origin}/car-assets${u.pathname}`);
+      }
+    }
+    return Array.from(new Set(withAndWithout));
+  } catch {
+    return [url];
+  }
+}
+
+/**
  * Resolves and uploads/saves a car asset into the local uploads directory.
  * - In local development: copies from Cars-Asset if present on disk.
  * - In production (or when Cars-Asset is not available): downloads from Cloudflare R2 into uploads.
@@ -117,15 +153,7 @@ async function resolveAndUploadCarImage({
 
   // 3. Download from Cloudflare R2 and save directly to uploads
   if (r2Url) {
-    const urlsToTry = [r2Url];
-    if (r2Url.includes('/car-assets/')) {
-      urlsToTry.push(r2Url.replace('/car-assets/', '/'));
-    } else {
-      try {
-        const parsed = new URL(r2Url);
-        urlsToTry.push(`${parsed.origin}/car-assets${parsed.pathname}`);
-      } catch {}
-    }
+    const urlsToTry = generateUrlCandidates(r2Url);
 
     for (let i = 0; i < urlsToTry.length; i++) {
       const targetUrl = urlsToTry[i];
@@ -137,14 +165,14 @@ async function resolveAndUploadCarImage({
           console.log(`  ✓ Downloaded from R2 & saved to uploads → ${relativeUploadPath}`);
           return relativeUploadPath;
         } else if (response.status === 404 && i < urlsToTry.length - 1) {
-          // If 404 on the first attempt, try the fallback format
+          // If 404 on this candidate, try the next candidate
           continue;
-        } else {
-          console.warn(`  ⚠ Cloudflare R2 returned ${response.status} ${response.statusText} for ${targetUrl}`);
+        } else if (i === urlsToTry.length - 1) {
+          console.warn(`  ⚠ Cloudflare R2 returned ${response.status} ${response.statusText} for ${r2Url}`);
         }
       } catch (err: any) {
         if (i < urlsToTry.length - 1) continue;
-        console.warn(`  ⚠ Network error fetching from R2 (${targetUrl}):`, err.message);
+        console.warn(`  ⚠ Network error fetching from R2 (${r2Url}):`, err.message);
       }
     }
   }
