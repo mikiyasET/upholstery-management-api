@@ -8,16 +8,11 @@ const prisma = new PrismaClient();
 
 /**
  * Resolves the Cloudflare R2 car-assets base URL.
- * Supports R2_PUBLIC_BASE_URL (e.g. "https://pub-xxxxxx.r2.dev" or "https://pub-xxxxxx.r2.dev/car-assets").
- * Ensures the returned URL points directly to the /car-assets prefix without duplicate trailing slashes.
+ * Supports R2_PUBLIC_BASE_URL (e.g. "https://pub-xxxxxx.r2.dev").
  */
 function getCarAssetsBaseUrl(): string {
-  const rawBase = (process.env.R2_PUBLIC_BASE_URL || 'https://pub-yonatan-car-decor.r2.dev').trim();
-  const trimmed = rawBase.replace(/\/+$/, '');
-  if (trimmed.toLowerCase().endsWith('/car-assets')) {
-    return trimmed;
-  }
-  return `${trimmed}/car-assets`;
+  const rawBase = (process.env.R2_PUBLIC_BASE_URL || 'https://pub-09661d9805264d67ad957b15391bcffd.r2.dev').trim();
+  return rawBase.replace(/\/+$/, '');
 }
 
 /**
@@ -122,18 +117,35 @@ async function resolveAndUploadCarImage({
 
   // 3. Download from Cloudflare R2 and save directly to uploads
   if (r2Url) {
-    try {
-      const response = await fetch(r2Url);
-      if (response.ok) {
-        const arrayBuffer = await response.arrayBuffer();
-        fs.writeFileSync(localUploadPath, Buffer.from(arrayBuffer));
-        console.log(`  ✓ Downloaded from R2 & saved to uploads → ${relativeUploadPath}`);
-        return relativeUploadPath;
-      } else {
-        console.warn(`  ⚠ Cloudflare R2 returned ${response.status} ${response.statusText} for ${r2Url}`);
+    const urlsToTry = [r2Url];
+    if (r2Url.includes('/car-assets/')) {
+      urlsToTry.push(r2Url.replace('/car-assets/', '/'));
+    } else {
+      try {
+        const parsed = new URL(r2Url);
+        urlsToTry.push(`${parsed.origin}/car-assets${parsed.pathname}`);
+      } catch {}
+    }
+
+    for (let i = 0; i < urlsToTry.length; i++) {
+      const targetUrl = urlsToTry[i];
+      try {
+        const response = await fetch(targetUrl);
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer();
+          fs.writeFileSync(localUploadPath, Buffer.from(arrayBuffer));
+          console.log(`  ✓ Downloaded from R2 & saved to uploads → ${relativeUploadPath}`);
+          return relativeUploadPath;
+        } else if (response.status === 404 && i < urlsToTry.length - 1) {
+          // If 404 on the first attempt, try the fallback format
+          continue;
+        } else {
+          console.warn(`  ⚠ Cloudflare R2 returned ${response.status} ${response.statusText} for ${targetUrl}`);
+        }
+      } catch (err: any) {
+        if (i < urlsToTry.length - 1) continue;
+        console.warn(`  ⚠ Network error fetching from R2 (${targetUrl}):`, err.message);
       }
-    } catch (err: any) {
-      console.warn(`  ⚠ Network error fetching from R2 (${r2Url}):`, err.message);
     }
   }
 
