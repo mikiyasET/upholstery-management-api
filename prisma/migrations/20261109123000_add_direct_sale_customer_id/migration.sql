@@ -21,3 +21,4 @@ FROM "Customer" c
 WHERE ds."customerPhone" = c."phoneNumber"
   AND ds."customerPhone" IS NOT NULL
   AND ds."customerId" IS NULL;
+
