@@ -70,33 +70,75 @@ function normalizeR2Url(
 }
 
 /**
- * Copies an image from Cars-Asset to the uploads directory with a UUID filename (for local dev mode).
- * Returns the relative path (e.g. "cars/brands/uuid.png") to store in the DB.
+ * Resolves and uploads/saves a car asset into the local uploads directory.
+ * - In local development: copies from Cars-Asset if present on disk.
+ * - In production (or when Cars-Asset is not available): downloads from Cloudflare R2 into uploads.
+ * - If already exists on disk in uploads, reuses it immediately (idempotent).
+ * - Returns relative path (e.g. "cars/brands/toyota.png") for local serving, or falls back to r2Url if download fails.
  */
-function copyImageToUploads(
-  sourceDir: string,
-  imageFileName: string,
-  uploadsSubfolder: string
-): string | undefined {
-  const sourcePath = path.join(sourceDir, imageFileName);
-  if (!fs.existsSync(sourcePath)) {
-    console.warn(`  ⚠ Image not found: ${sourcePath}`);
-    return undefined;
+async function resolveAndUploadCarImage({
+  category,
+  fileName,
+  brandFolder,
+  localSourceDir,
+  r2Url,
+}: {
+  category: 'brands' | 'models';
+  fileName: string | undefined;
+  brandFolder?: string;
+  localSourceDir?: string | null;
+  r2Url?: string;
+}): Promise<string | undefined> {
+  if (!fileName) return undefined;
+
+  const cleanName = path.basename(fileName);
+  const subfolder = category === 'brands' ? 'cars/brands' : `cars/models/${brandFolder || 'common'}`;
+  const relativeUploadPath = `${subfolder}/${cleanName}`;
+  const localUploadPath = path.join(process.cwd(), 'uploads', subfolder, cleanName);
+
+  // 1. If file is already in uploads and non-empty, reuse it!
+  if (fs.existsSync(localUploadPath) && fs.statSync(localUploadPath).size > 0) {
+    return relativeUploadPath;
   }
 
-  const ext = path.extname(imageFileName);
-  const uuidName = `${uuidv4()}${ext}`;
-  const uploadsDir = path.join(process.cwd(), 'uploads', uploadsSubfolder);
-
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
+  // Ensure target folder exists
+  const targetDir = path.dirname(localUploadPath);
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
   }
 
-  const destPath = path.join(uploadsDir, uuidName);
-  fs.copyFileSync(sourcePath, destPath);
-  console.log(`  ✓ Copied ${imageFileName} → ${uploadsSubfolder}/${uuidName}`);
+  // 2. Try copying from local Cars-Asset if available
+  if (localSourceDir) {
+    const localFile = path.join(localSourceDir, fileName);
+    if (fs.existsSync(localFile) && fs.statSync(localFile).size > 0) {
+      try {
+        fs.copyFileSync(localFile, localUploadPath);
+        return relativeUploadPath;
+      } catch (err: any) {
+        console.warn(`  ⚠ Could not copy local file ${localFile}:`, err.message);
+      }
+    }
+  }
 
-  return `${uploadsSubfolder}/${uuidName}`;
+  // 3. Download from Cloudflare R2 and save directly to uploads
+  if (r2Url) {
+    try {
+      const response = await fetch(r2Url);
+      if (response.ok) {
+        const arrayBuffer = await response.arrayBuffer();
+        fs.writeFileSync(localUploadPath, Buffer.from(arrayBuffer));
+        console.log(`  ✓ Downloaded from R2 & saved to uploads → ${relativeUploadPath}`);
+        return relativeUploadPath;
+      } else {
+        console.warn(`  ⚠ Cloudflare R2 returned ${response.status} ${response.statusText} for ${r2Url}`);
+      }
+    } catch (err: any) {
+      console.warn(`  ⚠ Network error fetching from R2 (${r2Url}):`, err.message);
+    }
+  }
+
+  // 4. Fallback: if remote R2 URL exists, return it, otherwise undefined
+  return r2Url || undefined;
 }
 
 async function main() {
@@ -158,10 +200,9 @@ async function main() {
         : null)
     : null;
 
-  const useR2 = isProduction || !localAssetsBasePath;
   const carAssetsBase = getCarAssetsBaseUrl();
-
-  console.log(`Car Catalog Seed Mode: ${useR2 ? `Cloudflare R2 (${carAssetsBase})` : `Local Filesystem (${localAssetsBasePath})`}`);
+  console.log(`Car Catalog Seed Source: ${isProduction ? `Cloudflare R2 (${carAssetsBase})` : `Local Filesystem (${localAssetsBasePath})`}`);
+  console.log(`Car Assets Destination: Server Local Uploads Directory (/uploads/cars)`);
 
   if (fs.existsSync(carsFilePath)) {
     const carsData = JSON.parse(fs.readFileSync(carsFilePath, 'utf-8'));
@@ -194,22 +235,16 @@ async function main() {
         where: { name: brandData.name },
       });
 
-      let brandLogoPath: string | undefined;
+      const brandFolder = brandData.assetFolder || brandData.name;
+      const r2Url = normalizeR2Url(carAssetsBase, 'brands', undefined, brandData.logo);
+      const localBrandsDir = localAssetsBasePath ? path.join(localAssetsBasePath, 'brands') : null;
 
-      if (useR2) {
-        brandLogoPath = normalizeR2Url(carAssetsBase, 'brands', undefined, brandData.logo);
-      } else if (localAssetsBasePath && brandData.logo) {
-        const brandLogoMissing = brand?.logoUrl ? !fs.existsSync(path.join(process.cwd(), 'uploads', brand.logoUrl)) : false;
-        if (!brand?.logoUrl || brandLogoMissing) {
-          brandLogoPath = copyImageToUploads(
-            path.join(localAssetsBasePath, 'brands'),
-            brandData.logo,
-            'cars/brands'
-          );
-        } else {
-          brandLogoPath = brand.logoUrl;
-        }
-      }
+      const brandLogoPath = await resolveAndUploadCarImage({
+        category: 'brands',
+        fileName: brandData.logo,
+        localSourceDir: localBrandsDir,
+        r2Url,
+      });
 
       if (!brand) {
         brand = await prisma.carBrand.create({
@@ -228,9 +263,9 @@ async function main() {
       }
 
       if (brandData.models && Array.isArray(brandData.models)) {
-        const modelsAssetDir = localAssetsBasePath
-          ? path.join(localAssetsBasePath, 'models', brandData.assetFolder || brandData.name)
-          : '';
+        const localModelsDir = localAssetsBasePath
+          ? path.join(localAssetsBasePath, 'models', brandFolder)
+          : null;
 
         for (const modelData of brandData.models) {
           const existingModel = await prisma.carModel.findFirst({
@@ -240,30 +275,15 @@ async function main() {
             },
           });
 
-          let modelImagePath: string | undefined;
+          const modelR2Url = normalizeR2Url(carAssetsBase, 'models', brandFolder, modelData.image);
 
-          if (useR2) {
-            modelImagePath = normalizeR2Url(
-              carAssetsBase,
-              'models',
-              brandData.assetFolder || brandData.name,
-              modelData.image
-            );
-          } else if (localAssetsBasePath && modelData.image) {
-            const modelImageMissing = existingModel?.imageUrl
-              ? !fs.existsSync(path.join(process.cwd(), 'uploads', existingModel.imageUrl))
-              : false;
-
-            if (!existingModel?.imageUrl || modelImageMissing) {
-              modelImagePath = copyImageToUploads(
-                modelsAssetDir,
-                modelData.image,
-                'cars/models'
-              );
-            } else {
-              modelImagePath = existingModel.imageUrl;
-            }
-          }
+          const modelImagePath = await resolveAndUploadCarImage({
+            category: 'models',
+            fileName: modelData.image,
+            brandFolder,
+            localSourceDir: localModelsDir,
+            r2Url: modelR2Url,
+          });
 
           if (!existingModel) {
             await prisma.carModel.create({

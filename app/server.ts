@@ -23,6 +23,13 @@ app.use(express.json());
 const UPLOADS_DIR = process.env.UPLOADS_DIR || './uploads';
 app.use('/uploads', express.static(path.resolve(UPLOADS_DIR)));
 
+// Fallback for car assets: if an image is not found on local disk in /uploads/cars, redirect to Cloudflare R2
+const R2_BASE = (process.env.R2_PUBLIC_BASE_URL || 'https://pub-yonatan-car-decor.r2.dev').replace(/\/+$/, '');
+const R2_CAR_ASSETS = R2_BASE.toLowerCase().endsWith('/car-assets') ? R2_BASE : `${R2_BASE}/car-assets`;
+app.use('/uploads/cars', (req, res) => {
+  res.redirect(302, `${R2_CAR_ASSETS}${req.path}`);
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
