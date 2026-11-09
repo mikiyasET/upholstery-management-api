@@ -10,14 +10,22 @@ import { checkMaterialBrandAllocation } from '../../lib/brand-stock';
 export class DirectSalesService {
   static async createDirectSale(data: any, userId: string) {
     return prisma.$transaction(async (tx) => {
+      let customerId: string | null = null;
       let customerName = data.customerName || null;
       let customerPhone = data.customerPhone || null;
       if (customerName && customerPhone) {
-        // Resolve customer to ensure it exists in db, but we only store name/phone on DirectSale
-        await CustomersVehiclesService.resolveCustomerAndVehicle({
+        // Resolve customer to ensure it exists in db and link direct sale
+        const resolved = await CustomersVehiclesService.resolveCustomerAndVehicle({
           name: customerName,
           phone: customerPhone,
         });
+        customerId = resolved?.customer?.id || null;
+      } else if (customerPhone) {
+        const existing = await CustomersVehiclesService.searchCustomerByPhone(customerPhone);
+        if (existing) {
+          customerId = existing.id;
+          if (!customerName) customerName = existing.name;
+        }
       }
 
       let subtotal = 0;
@@ -113,6 +121,7 @@ export class DirectSalesService {
       const sale = await tx.directSale.create({
         data: {
           saleNumber,
+          customerId,
           customerName,
           customerPhone,
           fsrNumber: data.fsrNumber ? String(data.fsrNumber).trim() : null,
@@ -182,10 +191,18 @@ export class DirectSalesService {
       await tx.directSalePayment.deleteMany({ where: { directSaleId: id } });
 
       // 3. Process new data
+      let customerId: string | null = null;
       let customerName = data.customerName || null;
       let customerPhone = data.customerPhone || null;
       if (customerName && customerPhone) {
-        await CustomersVehiclesService.resolveCustomerAndVehicle({ name: customerName, phone: customerPhone });
+        const resolved = await CustomersVehiclesService.resolveCustomerAndVehicle({ name: customerName, phone: customerPhone });
+        customerId = resolved?.customer?.id || null;
+      } else if (customerPhone) {
+        const existing = await CustomersVehiclesService.searchCustomerByPhone(customerPhone);
+        if (existing) {
+          customerId = existing.id;
+          if (!customerName) customerName = existing.name;
+        }
       }
 
       let subtotal = 0;
@@ -258,6 +275,7 @@ export class DirectSalesService {
       }
 
       const updateData: any = {
+        customerId,
         customerName,
         customerPhone,
         discountAmount: data.additionalDiscount,
@@ -340,6 +358,7 @@ export class DirectSalesService {
         ],
       },
       include: {
+        customer: true,
         createdBy: { select: { name: true } },
         lines: { include: { material: true, materialBrand: true } },
         payments: true,
@@ -370,6 +389,7 @@ export class DirectSalesService {
       where: { id: sale.id },
       data: { fsrNumber: normalizedFsr },
       include: {
+        customer: true,
         createdBy: { select: { name: true } },
         lines: { include: { material: true, materialBrand: true } },
         payments: true,

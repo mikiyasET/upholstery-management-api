@@ -2,10 +2,24 @@ import prisma from '../../lib/prisma';
 
 export class CustomersVehiclesService {
   static async searchCustomerByPhone(phone: string) {
-    return prisma.customer.findUnique({
-      where: { phoneNumber: phone },
+    const clean = phone.trim();
+    if (!clean) return null;
+
+    // 1. Exact match
+    let customer = await prisma.customer.findUnique({
+      where: { phoneNumber: clean },
       include: { vehicles: { include: { carModel: { include: { brand: true } } } } },
     });
+
+    // 2. Partial match if length >= 4
+    if (!customer && clean.length >= 4) {
+      customer = await prisma.customer.findFirst({
+        where: { phoneNumber: { contains: clean } },
+        include: { vehicles: { include: { carModel: { include: { brand: true } } } } },
+      });
+    }
+
+    return customer;
   }
 
   static async getCustomers(search?: string) {
@@ -19,7 +33,7 @@ export class CustomersVehiclesService {
       } : undefined,
       include: {
         vehicles: { include: { carModel: { include: { brand: true } } } },
-        _count: { select: { orders: true } }
+        _count: { select: { orders: true, directSales: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -39,7 +53,14 @@ export class CustomersVehiclesService {
             assignments: { include: { employee: true } }
           },
           orderBy: { createdAt: 'desc' }
-        }
+        },
+        directSales: {
+          include: {
+            lines: { include: { material: true } },
+            payments: true,
+          },
+          orderBy: { saleDateTime: 'desc' },
+        },
       }
     });
 

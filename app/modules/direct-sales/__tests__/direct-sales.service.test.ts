@@ -46,7 +46,8 @@ jest.mock('../../../lib/prisma', () => ({
 
 jest.mock('../../customers-vehicles/customers-vehicles.service', () => ({
   CustomersVehiclesService: {
-    resolveCustomerAndVehicle: jest.fn(),
+    resolveCustomerAndVehicle: jest.fn().mockResolvedValue({ customer: { id: 'cust-1', name: 'John Doe' }, vehicle: null }),
+    searchCustomerByPhone: jest.fn().mockResolvedValue({ id: 'cust-1', name: 'John Doe' }),
   },
 }));
 
@@ -264,5 +265,47 @@ describe('DirectSalesService - fsrNumber', () => {
       { fsrNumber: 'FSR-555' }
     );
     expect(result.fsrNumber).toBe('FSR-555');
+  });
+
+  it('should link customerId when customer phone is provided on createDirectSale', async () => {
+    (prisma.store.findUnique as jest.Mock).mockResolvedValue({ id: 'mini-1', type: StoreType.MINI });
+    (prisma.material.findFirst as jest.Mock).mockResolvedValue({
+      id: 'mat-1',
+      nameEn: 'Tint Film',
+      unit: 'PIECES',
+    });
+    (prisma.materialStock.findUnique as jest.Mock).mockResolvedValue({
+      quantity: new Decimal(10),
+    });
+    (prisma.materialStock.update as jest.Mock).mockResolvedValue({});
+    (prisma.directSale.create as jest.Mock).mockResolvedValue({
+      id: 'sale-1',
+      saleNumber: 'DS-200',
+      customerId: 'cust-1',
+      customerName: 'John Doe',
+      customerPhone: '0911000000',
+      lines: [],
+      payments: [],
+    });
+
+    await DirectSalesService.createDirectSale({
+      customerName: 'John Doe',
+      customerPhone: '0911000000',
+      items: [{ materialId: 'mat-1', quantity: 1, unitPrice: 100, discount: 0 }],
+      payments: [{ amount: 100, method: 'CASH' }],
+      additionalDiscount: 0,
+      taxEnabled: false,
+      taxRate: 0.15,
+    }, 'user-1');
+
+    expect(prisma.directSale.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          customerId: 'cust-1',
+          customerName: 'John Doe',
+          customerPhone: '0911000000',
+        }),
+      })
+    );
   });
 });

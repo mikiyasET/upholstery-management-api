@@ -447,8 +447,9 @@ model Customer {
   phoneNumber String   @unique
   createdAt   DateTime @default(now())
 
-  vehicles Vehicle[]
-  orders   Order[]
+  vehicles    Vehicle[]
+  orders      Order[]
+  directSales DirectSale[]
 }
 
 // ---------------------------------------------------------
@@ -577,6 +578,8 @@ model DirectSale {
   saleNumber     String        @unique
   fsrNumber      String?
   saleDateTime   DateTime      @default(now())
+  customerId     String?
+  customer       Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
   customerName   String?
   customerPhone  String?
   discountAmount Decimal       @default(0) @db.Decimal(10, 2)
@@ -590,6 +593,7 @@ model DirectSale {
   payments DirectSalePayment[]
 
   @@index([fsrNumber])
+  @@index([customerId])
 }
 
 model DirectSaleLine {
