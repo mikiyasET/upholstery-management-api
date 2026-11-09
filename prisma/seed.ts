@@ -7,7 +7,70 @@ import { v4 as uuidv4 } from 'uuid';
 const prisma = new PrismaClient();
 
 /**
- * Copies an image from Cars-Asset to the uploads directory with a UUID filename.
+ * Resolves the Cloudflare R2 car-assets base URL.
+ * Supports R2_PUBLIC_BASE_URL (e.g. "https://pub-xxxxxx.r2.dev" or "https://pub-xxxxxx.r2.dev/car-assets").
+ * Ensures the returned URL points directly to the /car-assets prefix without duplicate trailing slashes.
+ */
+function getCarAssetsBaseUrl(): string {
+  const rawBase = (process.env.R2_PUBLIC_BASE_URL || 'https://pub-yonatan-car-decor.r2.dev').trim();
+  const trimmed = rawBase.replace(/\/+$/, '');
+  if (trimmed.toLowerCase().endsWith('/car-assets')) {
+    return trimmed;
+  }
+  return `${trimmed}/car-assets`;
+}
+
+/**
+ * Normalizes incoming image paths from cars.json into valid public Cloudflare R2 URLs.
+ * Strips legacy "Cars-Asset/", "cars-asset/", "car-assets/", leading/trailing slashes,
+ * and duplicate brand directory prefixes.
+ */
+function normalizeR2Url(
+  carAssetsBase: string,
+  category: 'brands' | 'models',
+  assetFolder: string | undefined,
+  rawPath: string | undefined
+): string | undefined {
+  if (!rawPath || typeof rawPath !== 'string') return undefined;
+
+  const trimmed = rawPath.trim();
+  if (!trimmed) return undefined;
+
+  // Already a full remote URL
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+
+  // 1. Normalize backslashes and strip leading/trailing slashes
+  let clean = trimmed.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+
+  // 2. Strip legacy "Cars-Asset/" prefix (case-insensitive)
+  clean = clean.replace(/^cars-asset\//i, '');
+
+  // 3. Strip "car-assets/" prefix if already present (case-insensitive)
+  clean = clean.replace(/^car-assets\//i, '');
+
+  if (category === 'brands') {
+    // Strip "brands/" prefix if already present
+    clean = clean.replace(/^brands\//i, '');
+    return `${carAssetsBase}/brands/${clean}`;
+  } else {
+    // category === 'models'
+    // Strip "models/" prefix if already present
+    clean = clean.replace(/^models\//i, '');
+
+    const folder = (assetFolder || '').trim();
+    // If clean already starts with the brand folder (e.g. "Toyota/corolla.png"), strip it
+    if (folder && clean.toLowerCase().startsWith(`${folder.toLowerCase()}/`)) {
+      clean = clean.slice(folder.length + 1);
+    }
+
+    return folder ? `${carAssetsBase}/models/${folder}/${clean}` : `${carAssetsBase}/models/${clean}`;
+  }
+}
+
+/**
+ * Copies an image from Cars-Asset to the uploads directory with a UUID filename (for local dev mode).
  * Returns the relative path (e.g. "cars/brands/uuid.png") to store in the DB.
  */
 function copyImageToUploads(
@@ -77,14 +140,28 @@ async function main() {
   });
 
 
-  // 3. Create Car Catalog from cars.json with images
+  // 3. Create Car Catalog from cars.json
   console.log('Seeding car catalog from cars.json...');
   const carsFilePath = fs.existsSync(path.join(process.cwd(), 'cars.json'))
     ? path.join(process.cwd(), 'cars.json')
     : path.join(process.cwd(), '../cars.json');
-  const assetsBasePath = fs.existsSync(path.join(process.cwd(), 'Cars-Asset'))
-    ? path.join(process.cwd(), 'Cars-Asset')
-    : path.join(process.cwd(), '../Cars-Asset');
+
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.USE_R2 === 'true';
+
+  // In production, we completely remove local filesystem checks for Cars-Asset and pull from Cloudflare R2.
+  // In development, it pulls from the local filesystem (Cars-Asset) if available, unless USE_R2 is explicitly enabled.
+  const localAssetsBasePath = !isProduction
+    ? (fs.existsSync(path.join(process.cwd(), 'Cars-Asset'))
+        ? path.join(process.cwd(), 'Cars-Asset')
+        : fs.existsSync(path.join(process.cwd(), '../Cars-Asset'))
+        ? path.join(process.cwd(), '../Cars-Asset')
+        : null)
+    : null;
+
+  const useR2 = isProduction || !localAssetsBasePath;
+  const carAssetsBase = getCarAssetsBaseUrl();
+
+  console.log(`Car Catalog Seed Mode: ${useR2 ? `Cloudflare R2 (${carAssetsBase})` : `Local Filesystem (${localAssetsBasePath})`}`);
 
   if (fs.existsSync(carsFilePath)) {
     const carsData = JSON.parse(fs.readFileSync(carsFilePath, 'utf-8'));
@@ -117,14 +194,21 @@ async function main() {
         where: { name: brandData.name },
       });
 
-      let brandLogoPath = brand?.logoUrl || undefined;
-      const brandLogoMissing = brand?.logoUrl ? !fs.existsSync(path.join(process.cwd(), 'uploads', brand.logoUrl)) : false;
-      if ((!brandLogoPath || brandLogoMissing) && brandData.logo) {
-        brandLogoPath = copyImageToUploads(
-          path.join(assetsBasePath, 'brands'),
-          brandData.logo,
-          'cars/brands'
-        );
+      let brandLogoPath: string | undefined;
+
+      if (useR2) {
+        brandLogoPath = normalizeR2Url(carAssetsBase, 'brands', undefined, brandData.logo);
+      } else if (localAssetsBasePath && brandData.logo) {
+        const brandLogoMissing = brand?.logoUrl ? !fs.existsSync(path.join(process.cwd(), 'uploads', brand.logoUrl)) : false;
+        if (!brand?.logoUrl || brandLogoMissing) {
+          brandLogoPath = copyImageToUploads(
+            path.join(localAssetsBasePath, 'brands'),
+            brandData.logo,
+            'cars/brands'
+          );
+        } else {
+          brandLogoPath = brand.logoUrl;
+        }
       }
 
       if (!brand) {
@@ -140,11 +224,13 @@ async function main() {
           where: { id: brand.id },
           data: { logoUrl: brandLogoPath },
         });
-        console.log(`Updated brand logo: ${brandData.name}`);
+        console.log(`Updated brand logo: ${brandData.name} → ${brandLogoPath}`);
       }
 
       if (brandData.models && Array.isArray(brandData.models)) {
-        const modelsAssetDir = path.join(assetsBasePath, 'models', brandData.assetFolder || brandData.name);
+        const modelsAssetDir = localAssetsBasePath
+          ? path.join(localAssetsBasePath, 'models', brandData.assetFolder || brandData.name)
+          : '';
 
         for (const modelData of brandData.models) {
           const existingModel = await prisma.carModel.findFirst({
@@ -154,18 +240,32 @@ async function main() {
             },
           });
 
-          const modelImageMissing = existingModel?.imageUrl ? !fs.existsSync(path.join(process.cwd(), 'uploads', existingModel.imageUrl)) : false;
+          let modelImagePath: string | undefined;
 
-          if (!existingModel) {
-            let modelImagePath: string | undefined;
-            if (modelData.image) {
+          if (useR2) {
+            modelImagePath = normalizeR2Url(
+              carAssetsBase,
+              'models',
+              brandData.assetFolder || brandData.name,
+              modelData.image
+            );
+          } else if (localAssetsBasePath && modelData.image) {
+            const modelImageMissing = existingModel?.imageUrl
+              ? !fs.existsSync(path.join(process.cwd(), 'uploads', existingModel.imageUrl))
+              : false;
+
+            if (!existingModel?.imageUrl || modelImageMissing) {
               modelImagePath = copyImageToUploads(
                 modelsAssetDir,
                 modelData.image,
                 'cars/models'
               );
+            } else {
+              modelImagePath = existingModel.imageUrl;
             }
+          }
 
+          if (!existingModel) {
             await prisma.carModel.create({
               data: {
                 brandId: brand.id,
@@ -174,19 +274,12 @@ async function main() {
               },
             });
             console.log(`  + Model: ${brandData.name} ${modelData.name}`);
-          } else if (modelData.image && (!existingModel.imageUrl || modelImageMissing)) {
-            const modelImagePath = copyImageToUploads(
-              modelsAssetDir,
-              modelData.image,
-              'cars/models'
-            );
-            if (modelImagePath) {
-              await prisma.carModel.update({
-                where: { id: existingModel.id },
-                data: { imageUrl: modelImagePath },
-              });
-              console.log(`  ✓ Updated image for model: ${brandData.name} ${modelData.name}`);
-            }
+          } else if (modelImagePath && existingModel.imageUrl !== modelImagePath) {
+            await prisma.carModel.update({
+              where: { id: existingModel.id },
+              data: { imageUrl: modelImagePath },
+            });
+            console.log(`  ✓ Updated image for model: ${brandData.name} ${modelData.name} → ${modelImagePath}`);
           }
         }
       }
