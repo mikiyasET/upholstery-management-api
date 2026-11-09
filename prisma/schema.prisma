@@ -575,6 +575,7 @@ model OrderPayment {
 model DirectSale {
   id             String        @id @default(cuid())
   saleNumber     String        @unique
+  fsrNumber      String?
   saleDateTime   DateTime      @default(now())
   customerName   String?
   customerPhone  String?
@@ -587,6 +588,8 @@ model DirectSale {
 
   lines    DirectSaleLine[]
   payments DirectSalePayment[]
+
+  @@index([fsrNumber])
 }
 
 model DirectSaleLine {

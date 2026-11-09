@@ -30,7 +30,11 @@ export class DirectSalesController {
   }
 
   static async getDirectSales(req: Request, res: Response) {
-    const sales = await DirectSalesService.getDirectSales();
+    const filters = {
+      search: req.query.search ? String(req.query.search).trim() : undefined,
+      fsrNumber: req.query.fsrNumber ? String(req.query.fsrNumber).trim() : undefined,
+    };
+    const sales = await DirectSalesService.getDirectSales(filters);
     res.json(sales);
   }
 
@@ -38,5 +42,21 @@ export class DirectSalesController {
     const sale = await DirectSalesService.getDirectSale(req.params.id);
     if (!sale) return res.status(404).json({ error: { message: 'Not found' } });
     res.json(sale);
+  }
+
+  static async updateFsrNumber(req: Request, res: Response) {
+    try {
+      const sale = await DirectSalesService.updateFsrNumber(
+        req.params.id,
+        req.body.fsrNumber,
+        req.user!.userId
+      );
+      res.json(sale);
+    } catch (error: any) {
+      if (error.message === 'Direct sale not found') {
+        return res.status(404).json({ error: { message: error.message } });
+      }
+      throw error;
+    }
   }
 }

@@ -28,5 +28,12 @@ export const createDirectSaleSchema = z.object({
     })).min(1),
 
     notes: z.string().optional(),
+    fsrNumber: z.string().trim().optional().nullable(),
+  }),
+});
+
+export const updateDirectSaleFsrSchema = z.object({
+  body: z.object({
+    fsrNumber: z.string().trim().optional().nullable(),
   }),
 });

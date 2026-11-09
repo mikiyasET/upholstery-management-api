@@ -115,6 +115,7 @@ export class DirectSalesService {
           saleNumber,
           customerName,
           customerPhone,
+          fsrNumber: data.fsrNumber ? String(data.fsrNumber).trim() : null,
           discountAmount: data.additionalDiscount,
           taxAmount,
           createdById: userId,
@@ -256,16 +257,23 @@ export class DirectSalesService {
         paymentStatus = 'PARTIALLY_PAID';
       }
 
+      const updateData: any = {
+        customerName,
+        customerPhone,
+        discountAmount: data.additionalDiscount,
+        taxAmount,
+        paymentStatus,
+        lines: { create: itemsData },
+      };
+      if (data.fsrNumber !== undefined) {
+        updateData.fsrNumber = data.fsrNumber && typeof data.fsrNumber === 'string' && data.fsrNumber.trim().length > 0
+          ? data.fsrNumber.trim()
+          : null;
+      }
+
       const sale = await tx.directSale.update({
         where: { id },
-        data: {
-          customerName,
-          customerPhone,
-          discountAmount: data.additionalDiscount,
-          taxAmount,
-          paymentStatus,
-          lines: { create: itemsData },
-        },
+        data: updateData,
       });
 
       for (const payment of data.payments) {
@@ -297,8 +305,22 @@ export class DirectSalesService {
     });
   }
 
-  static async getDirectSales() {
+  static async getDirectSales(filters?: { search?: string; fsrNumber?: string }) {
+    const where: any = {};
+    if (filters?.search) {
+      where.OR = [
+        { saleNumber: { contains: filters.search, mode: 'insensitive' } },
+        { customerName: { contains: filters.search, mode: 'insensitive' } },
+        { customerPhone: { contains: filters.search, mode: 'insensitive' } },
+        { fsrNumber: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+    if (filters?.fsrNumber) {
+      where.fsrNumber = { contains: filters.fsrNumber, mode: 'insensitive' };
+    }
+
     return prisma.directSale.findMany({
+      where,
       include: { 
         createdBy: { select: { name: true } },
         payments: { select: { amount: true } },
@@ -308,14 +330,61 @@ export class DirectSalesService {
     });
   }
 
-  static async getDirectSale(id: string) {
-    return prisma.directSale.findUnique({
-      where: { id },
+  static async getDirectSale(idOrIdentifier: string) {
+    return prisma.directSale.findFirst({
+      where: {
+        OR: [
+          { id: idOrIdentifier },
+          { saleNumber: idOrIdentifier },
+          { fsrNumber: idOrIdentifier },
+        ],
+      },
       include: {
         createdBy: { select: { name: true } },
         lines: { include: { material: true, materialBrand: true } },
         payments: true,
       },
     });
+  }
+
+  static async updateFsrNumber(saleIdOrIdentifier: string, fsrNumber: string | null | undefined, userId: string) {
+    const sale = await prisma.directSale.findFirst({
+      where: {
+        OR: [
+          { id: saleIdOrIdentifier },
+          { saleNumber: saleIdOrIdentifier },
+          { fsrNumber: saleIdOrIdentifier },
+        ],
+      },
+    });
+
+    if (!sale) {
+      throw new Error('Direct sale not found');
+    }
+
+    const normalizedFsr = fsrNumber && typeof fsrNumber === 'string' && fsrNumber.trim().length > 0
+      ? fsrNumber.trim()
+      : null;
+
+    const updated = await prisma.directSale.update({
+      where: { id: sale.id },
+      data: { fsrNumber: normalizedFsr },
+      include: {
+        createdBy: { select: { name: true } },
+        lines: { include: { material: true, materialBrand: true } },
+        payments: true,
+      },
+    });
+
+    await AuditService.record(
+      'DirectSale',
+      sale.id,
+      AuditAction.UPDATE,
+      userId,
+      { fsrNumber: sale.fsrNumber },
+      { fsrNumber: normalizedFsr }
+    );
+
+    return updated;
   }
 }
