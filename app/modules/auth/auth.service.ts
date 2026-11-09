@@ -79,4 +79,24 @@ export class AuthService {
       throw new Error('Invalid or expired refresh token');
     }
   }
+
+  static async changePassword(userId: string, currentPasswordPlain: string, newPasswordPlain: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.isActive || !user.passwordHash) {
+      throw new Error('Invalid phone number or password');
+    }
+
+    const valid = await argon2.verify(user.passwordHash, currentPasswordPlain);
+    if (!valid) {
+      throw new Error('Current password is incorrect');
+    }
+
+    const newHash = await argon2.hash(newPasswordPlain);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash },
+    });
+
+    return { message: 'Password updated successfully' };
+  }
 }

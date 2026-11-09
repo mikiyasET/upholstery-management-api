@@ -68,4 +68,29 @@ export class AuthController {
     // For a simple implementation without token invalidation table, we just return success.
     res.json({ message: 'Logged out successfully' });
   }
+
+  static async changePassword(req: Request, res: Response) {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user!.userId;
+
+    try {
+      const result = await AuthService.changePassword(userId, currentPassword, newPassword);
+      res.json(result);
+    } catch (error: any) {
+      if (
+        error.message === 'Current password is incorrect' ||
+        error.message === 'Invalid phone number or password' ||
+        error.message === 'New password must be at least 6 characters'
+      ) {
+        return res.status(400).json({ error: { message: error.message } });
+      }
+
+      console.error('[AuthController.changePassword] Server error:', error);
+      return res.status(500).json({
+        error: {
+          message: 'Unable to update password due to a server error. Please try again later.',
+        },
+      });
+    }
+  }
 }

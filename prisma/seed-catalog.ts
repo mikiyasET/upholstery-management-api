@@ -1158,8 +1158,8 @@ async function main() {
     create: { name: 'Mini Store (Showroom / Floor)', type: StoreType.MINI },
   });
 
-  // 3. Seed Materials and MaterialBrands with Stock
-  console.log(`📦 Seeding ${MATERIALS_CATALOG.length} standardized materials with variants and stock...`);
+  // 3. Seed Materials and MaterialBrands with 0 Initial Stock
+  console.log(`📦 Seeding ${MATERIALS_CATALOG.length} standardized materials with variants (0 initial stock, ready for counting)...`);
   const materialCodeMap = new Map<string, string>(); // code -> id
 
   for (const item of MATERIALS_CATALOG) {
@@ -1178,20 +1178,8 @@ async function main() {
 
     materialCodeMap.set(item.code, material.id);
 
-    // Initial stock quantities: strictly 50 total for both Main and Mini store
-    const totalMainQty = 50;
-    const totalMiniQty = 50;
-
+    // Initial stock quantities are 0 (stock will be added by counting / restocking)
     if (item.brands && item.brands.length > 0) {
-      const numBrands = item.brands.length;
-      const baseBrandMain = Math.floor(totalMainQty / numBrands);
-      const remBrandMain = totalMainQty % numBrands;
-      const baseBrandMini = Math.floor(totalMiniQty / numBrands);
-      const remBrandMini = totalMiniQty % numBrands;
-
-      let brandTotalMain = 0;
-      let brandTotalMini = 0;
-
       for (let i = 0; i < item.brands.length; i++) {
         const b = item.brands[i];
         const brandRecord = await prisma.materialBrand.create({
@@ -1205,40 +1193,34 @@ async function main() {
           },
         });
 
-        // Distribute the 50 units across brands so the aggregate remains exactly 50
-        const brandMainQty = baseBrandMain + (i < remBrandMain ? 1 : 0);
-        const brandMiniQty = baseBrandMini + (i < remBrandMini ? 1 : 0);
-
+        // Initialize brand stock at 0 for both stores
         await prisma.materialBrandStock.createMany({
           data: [
-            { materialBrandId: brandRecord.id, storeId: mainStore.id, quantity: brandMainQty },
-            { materialBrandId: brandRecord.id, storeId: miniStore.id, quantity: brandMiniQty },
+            { materialBrandId: brandRecord.id, storeId: mainStore.id, quantity: 0 },
+            { materialBrandId: brandRecord.id, storeId: miniStore.id, quantity: 0 },
           ],
         });
-
-        brandTotalMain += brandMainQty;
-        brandTotalMini += brandMiniQty;
       }
 
-      // Synchronize parent aggregate materialStock (strictly 50)
+      // Initialize aggregate materialStock at 0
       await prisma.materialStock.createMany({
         data: [
-          { materialId: material.id, storeId: mainStore.id, quantity: brandTotalMain },
-          { materialId: material.id, storeId: miniStore.id, quantity: brandTotalMini },
+          { materialId: material.id, storeId: mainStore.id, quantity: 0 },
+          { materialId: material.id, storeId: miniStore.id, quantity: 0 },
         ],
       });
     } else {
-      // Single / universal stock without specific brands (strictly 50)
+      // Single / universal material stock initialized at 0
       await prisma.materialStock.createMany({
         data: [
-          { materialId: material.id, storeId: mainStore.id, quantity: totalMainQty },
-          { materialId: material.id, storeId: miniStore.id, quantity: totalMiniQty },
+          { materialId: material.id, storeId: mainStore.id, quantity: 0 },
+          { materialId: material.id, storeId: miniStore.id, quantity: 0 },
         ],
       });
     }
   }
 
-  console.log(`  ✓ Successfully seeded ${MATERIALS_CATALOG.length} materials with initial stock in MAIN and MINI stores.`);
+  console.log(`  ✓ Successfully seeded ${MATERIALS_CATALOG.length} materials with 0 initial stock in MAIN and MINI stores.`);
 
   // 4. Seed Service Groups
   console.log(`📂 Seeding ${SERVICE_GROUPS.length} service groups...`);
