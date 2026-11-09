@@ -54,7 +54,13 @@ export class DeadlineMonitorService {
         },
         include: {
           customer: true,
-          vehicle: { include: { carModel: true } },
+          vehicle: {
+            include: {
+              carModel: {
+                include: { brand: true },
+              },
+            },
+          },
           serviceLines: {
             include: {
               serviceCategory: {
@@ -65,6 +71,7 @@ export class DeadlineMonitorService {
           standaloneLines: {
             include: {
               material: true,
+              materialBrand: true,
             },
           },
           assignments: {
@@ -72,6 +79,7 @@ export class DeadlineMonitorService {
               employee: true,
             },
           },
+          additionalCharges: true,
           payments: true,
         },
       });

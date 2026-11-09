@@ -1073,7 +1073,13 @@ export class OrdersService {
       where: { id: orderId },
       include: {
         customer: true,
-        vehicle: { include: { carModel: true } },
+        vehicle: {
+          include: {
+            carModel: {
+              include: { brand: true },
+            },
+          },
+        },
         serviceLines: {
           include: {
             serviceCategory: {
@@ -1084,6 +1090,7 @@ export class OrdersService {
         standaloneLines: {
           include: {
             material: true,
+            materialBrand: true,
           },
         },
         assignments: {
@@ -1096,6 +1103,7 @@ export class OrdersService {
             carStatus: true,
           },
         },
+        additionalCharges: true,
         payments: true,
       },
     });
