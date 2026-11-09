@@ -45,8 +45,3 @@ npm run build
 npm start
 ```
 
-### Docker
-```bash
-docker build -t yonatan-upholstery-api .
-docker run -p 3000:3000 --env-file .env yonatan-upholstery-api
-```
