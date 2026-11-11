@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { PrismaClient, Unit, StoreType } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -14,6 +16,7 @@ interface MaterialSeedItem {
   code: string;
   nameEn: string;
   nameAm: string;
+  imageUrl?: string;
   unit: Unit;
   price: number;
   lowStockThreshold: number;
@@ -33,6 +36,7 @@ interface ServiceSeedItem {
   nameEn: string;
   nameAm: string;
   groupEn: string;
+  imageUrl?: string;
   categories: ServiceCategorySeed[];
 }
 
@@ -64,8 +68,8 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
   },
   {
     code: 'MAT-0002',
-    nameEn: 'Car Body Polish & Wax',
-    nameAm: 'የመኪና ፖሊሽ እና ዋክስ',
+    nameEn: 'Car Polish',
+    nameAm: 'የመኪና ፖሊሽ',
     unit: Unit.PCS,
     price: 500,
     lowStockThreshold: 8,
@@ -76,14 +80,42 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
       { name: 'Abro', color: 'Red', type: 'Color Polish', price: 550 },
       { name: 'Abro', color: 'Green', type: 'Color Polish', price: 550 },
       { name: 'Abro', color: 'Chrome / Silver', type: 'Color Polish', price: 600 },
-      { name: 'Abro', type: 'Compound Polish', price: 650 },
-      { name: 'Abro', type: 'Carnauba Wax', price: 700 },
     ],
   },
   {
     code: 'MAT-0003',
-    nameEn: 'Leather Cleaner & Conditioner',
-    nameAm: 'የቆዳ ማጽጃ እና ኮንዲሽነር',
+    nameEn: 'Polishing Compound',
+    nameAm: 'የፖሊሽ ኮምፓውንድ',
+    unit: Unit.PCS,
+    price: 650,
+    lowStockThreshold: 6,
+    isStandaloneSellable: true,
+    brands: [
+      { name: 'Abro', type: 'Heavy Cut Compound', price: 650 },
+      { name: 'Abro', type: 'Medium Cut Compound', price: 650 },
+      { name: 'Flamingo', type: 'Rubbing Compound', price: 600 },
+      { name: 'Universal', price: 550 },
+    ],
+  },
+  {
+    code: 'MAT-0004',
+    nameEn: 'Wax',
+    nameAm: 'የመኪና ዋክስ',
+    unit: Unit.PCS,
+    price: 500,
+    lowStockThreshold: 8,
+    isStandaloneSellable: true,
+    brands: [
+      { name: 'Abro', type: 'Carnauba Paste Wax', price: 550 },
+      { name: 'Flamingo', type: 'Liquid Carnauba Wax', price: 500 },
+      { name: 'Getsun', type: 'Hard Wax', price: 450 },
+      { name: 'Universal', type: 'Spray Wax', price: 400 },
+    ],
+  },
+  {
+    code: 'MAT-0005',
+    nameEn: 'Leather Cleaner',
+    nameAm: 'የቆዳ ማጽጃ',
     unit: Unit.PCS,
     price: 500,
     lowStockThreshold: 5,
@@ -94,8 +126,8 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0004',
-    nameEn: 'Multi-Purpose Foam Cleaner',
+    code: 'MAT-0006',
+    nameEn: 'Foam Cleaner',
     nameAm: 'ፎም ክሊነር ሁለገብ ማጽጃ',
     unit: Unit.PCS,
     price: 400,
@@ -108,7 +140,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0005',
+    code: 'MAT-0007',
     nameEn: 'Dashboard Polish & Protectant',
     nameAm: 'የዳሽቦርድ ፖሊሽ/ቅባት',
     unit: Unit.PCS,
@@ -123,7 +155,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0006',
+    code: 'MAT-0008',
     nameEn: 'Car Wash Shampoo',
     nameAm: 'የመኪና ማጠቢያ ሻምፖ',
     unit: Unit.PCS,
@@ -139,7 +171,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0007',
+    code: 'MAT-0009',
     nameEn: 'Radiator Coolant Fluid',
     nameAm: 'የራዲያተር ኩላንት ውሃ',
     unit: Unit.PCS,
@@ -152,7 +184,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0008',
+    code: 'MAT-0010',
     nameEn: 'Tire Shine Foam Spray',
     nameAm: 'የጎማ ማብረቂያ ፎም',
     unit: Unit.PCS,
@@ -166,7 +198,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0009',
+    code: 'MAT-0011',
     nameEn: 'Chamois Car Drying Towel',
     nameAm: 'የውሻ ቆዳ የመኪና ማድረቂያ',
     unit: Unit.PCS,
@@ -183,7 +215,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
 
   // B. Emergency, Safety & Mechanical Tools
   {
-    code: 'MAT-0010',
+    code: 'MAT-0012',
     nameEn: 'First Aid Kit',
     nameAm: 'የመጀመሪያ እርዳታ ኪት',
     unit: Unit.PCS,
@@ -192,7 +224,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     isStandaloneSellable: true,
   },
   {
-    code: 'MAT-0011',
+    code: 'MAT-0013',
     nameEn: 'Fire Stop Spray Extinguisher',
     nameAm: 'የእሳት ማጥፊያ ስፕሬይ',
     unit: Unit.PCS,
@@ -204,8 +236,8 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0012',
-    nameEn: 'Hydraulic Trolley Jack (Cric)',
+    code: 'MAT-0014',
+    nameEn: 'Crick (Jack)',
     nameAm: 'የመኪና ክሪክ (ጃክ)',
     unit: Unit.PCS,
     price: 2800,
@@ -217,7 +249,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0013',
+    code: 'MAT-0015',
     nameEn: 'Wheel Lug Wrench (Goma Mefcha)',
     nameAm: 'የጎማ መፍቻ ቁልፍ',
     unit: Unit.PCS,
@@ -230,7 +262,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0014',
+    code: 'MAT-0016',
     nameEn: 'Portable Tire Air Compressor',
     nameAm: 'የመኪና ጎማ ኤሌክትሪክ ኮምፕረሰር',
     unit: Unit.PCS,
@@ -243,8 +275,8 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0015',
-    nameEn: 'Anti-Theft Wheel Clamp Lock',
+    code: 'MAT-0017',
+    nameEn: 'Anti-Theft Wheel Lock Nuts (Tire Locker)',
     nameAm: 'የጎማ መቆለፊያ',
     unit: Unit.PCS,
     price: 3200,
@@ -258,7 +290,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0016',
+    code: 'MAT-0018',
     nameEn: 'Spare Tire & Steel Wheel (Scort Tayer)',
     nameAm: 'ስኮርት ጎማ (ተጠባባቂ)',
     unit: Unit.PCS,
@@ -273,9 +305,9 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0017',
-    nameEn: 'Automotive Gym & Tool Bag',
-    nameAm: 'የመኪና ዕቃ እና ጂም ቦርሳ',
+    code: 'MAT-0019',
+    nameEn: 'Gym Bag',
+    nameAm: 'የጂም ቦርሳ',
     unit: Unit.PCS,
     price: 950,
     lowStockThreshold: 6,
@@ -284,8 +316,8 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
 
   // C. Exterior Protection & Accessories
   {
-    code: 'MAT-0018',
-    nameEn: 'Mud Flaps / Splash Guards',
+    code: 'MAT-0020',
+    nameEn: 'Mud Guard',
     nameAm: 'የጭቃ መከላከያ',
     unit: Unit.PCS,
     price: 1200,
@@ -299,8 +331,8 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0019',
-    nameEn: 'Window Sun Visor / Wind Deflector',
+    code: 'MAT-0021',
+    nameEn: 'Windbreak',
     nameAm: 'የንፋስ እና የፀሐይ መከላከያ (ዊንድ ብሬክ)',
     unit: Unit.PCS,
     price: 1500,
@@ -312,8 +344,8 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0020',
-    nameEn: 'All-Weather Car Body Cover',
+    code: 'MAT-0022',
+    nameEn: 'Car Body Cover',
     nameAm: 'የመኪና ሙሉ ልባስ (ኮቨር)',
     unit: Unit.PCS,
     price: 2800,
@@ -327,7 +359,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0021',
+    code: 'MAT-0023',
     nameEn: 'License Plate Frame',
     nameAm: 'የታርጋ ፍሬም',
     unit: Unit.PCS,
@@ -340,7 +372,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0022',
+    code: 'MAT-0024',
     nameEn: 'Side Mirror Protection Kit & Wire (Spokiyo/Fermo)',
     nameAm: 'የስፖኪዮ እና ፌርሞ መከላከያ ሽቦ',
     unit: Unit.PCS,
@@ -355,8 +387,8 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
 
   // D. Automotive Electronics, Audio & Security
   {
-    code: 'MAT-0023',
-    nameEn: 'Vehicle GPS Tracker',
+    code: 'MAT-0025',
+    nameEn: 'GPS Tracker',
     nameAm: 'ጂ.ፒ.ኤስ የመኪና መከታተያ',
     unit: Unit.PCS,
     price: 4500,
@@ -368,8 +400,8 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0024',
-    nameEn: 'Car Security Alarm System Kit',
+    code: 'MAT-0026',
+    nameEn: 'Alarm System Kit',
     nameAm: 'የመኪና አላርም ሲስተም',
     unit: Unit.PCS,
     price: 3800,
@@ -381,7 +413,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0025',
+    code: 'MAT-0027',
     nameEn: 'Central Door Locking System Kit',
     nameAm: 'ሴንትራል ሎክ ሲስተም',
     unit: Unit.PCS,
@@ -394,8 +426,8 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0026',
-    nameEn: 'Android Touchscreen Infotainment Display',
+    code: 'MAT-0028',
+    nameEn: 'Android Touchscreen Display',
     nameAm: 'የአንድሮይድ ስክሪን ዲስፕሌይ',
     unit: Unit.PCS,
     price: 9500,
@@ -407,9 +439,9 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0027',
-    nameEn: 'Car Door Audio Speaker',
-    nameAm: 'የመኪና በር ስፒከር',
+    code: 'MAT-0029',
+    nameEn: 'Car Speaker',
+    nameAm: 'የመኪና ስፒከር',
     unit: Unit.PCS,
     price: 1800,
     lowStockThreshold: 5,
@@ -420,7 +452,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0028',
+    code: 'MAT-0030',
     nameEn: 'Remote Key Battery',
     nameAm: 'የርቀት መቆጣጠሪያ ባትሪ',
     unit: Unit.PCS,
@@ -436,7 +468,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
 
   // E. Interior Styling & Comfort Accessories
   {
-    code: 'MAT-0029',
+    code: 'MAT-0031',
     nameEn: 'Steering Wheel Cover (Meri Lbs)',
     nameAm: 'የመኪና መሪ ልባስ',
     unit: Unit.PCS,
@@ -450,8 +482,8 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0030',
-    nameEn: 'Smart Key Protective Cover',
+    code: 'MAT-0032',
+    nameEn: 'Key Cover',
     nameAm: 'የቁልፍ ከቨር',
     unit: Unit.PCS,
     price: 350,
@@ -465,8 +497,8 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0031',
-    nameEn: 'Universal All-Weather Floor Mats',
+    code: 'MAT-0033',
+    nameEn: 'Floor Mats',
     nameAm: 'የመኪና ወለል ምንጣፍ (መረጋገጫ)',
     unit: Unit.PCS,
     price: 2200,
@@ -478,9 +510,9 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0032',
-    nameEn: 'Center Armrest Console Box',
-    nameAm: 'የመኪና እጅ መደገፊያ ኮንሶል',
+    code: 'MAT-0034',
+    nameEn: 'Armrest',
+    nameAm: 'የመኪና እጅ መደገፊያ',
     unit: Unit.PCS,
     price: 2200,
     lowStockThreshold: 4,
@@ -491,7 +523,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0033',
+    code: 'MAT-0035',
     nameEn: 'Cushion Seat Cover',
     nameAm: 'የኩሽን ወንበር ልባስ',
     unit: Unit.PCS,
@@ -504,24 +536,9 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0034',
-    nameEn: 'Full Set Luxury Seat Covers',
-    nameAm: 'ሙሉ ሴት የቅንጦት ወንበር ልባስ',
-    unit: Unit.PCS,
-    price: 8500,
-    lowStockThreshold: 4,
-    isStandaloneSellable: true,
-    brands: [
-      { name: 'Universal', size: '5-Seat Set', price: 8500 },
-      { name: 'Universal', size: '7-Seat Set', price: 12000 },
-    ],
-  },
-
-  // F. Workshop Raw Materials (Upholstery, Detailing & PPF)
-  {
-    code: 'MAT-0035',
-    nameEn: 'Floor Mat Material Roll (1.40m Width)',
-    nameAm: 'የምንጣፍ ጥቅል (1.40 ሜትር)',
+    code: 'MAT-0036',
+    nameEn: 'Floor Mat Material Roll',
+    nameAm: 'የምንጣፍ ጥቅል',
     unit: Unit.METERS,
     price: 650,
     lowStockThreshold: 20,
@@ -533,18 +550,6 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
       { name: 'Universal', size: '1.40m', type: 'MM (ኤም ኤም)', price: 650 },
       { name: 'Universal', size: '1.40m', type: 'Number 8 (8 ቁጥር)', price: 650 },
       { name: 'Universal', size: '1.40m', type: 'Dot Dot (ነጠብጣብ)', price: 650 },
-    ],
-  },
-  {
-    code: 'MAT-0036',
-    nameEn: 'Floor Mat Material Roll (1.60m Width)',
-    nameAm: 'የምንጣፍ ጥቅል (1.60 ሜትር)',
-    unit: Unit.METERS,
-    price: 850,
-    lowStockThreshold: 20,
-    isStandaloneSellable: false,
-    isBulkTracked: true,
-    brands: [
       { name: 'Universal', size: '1.60m', type: 'Normal Plain (መደበኛ)', price: 850 },
       { name: 'Universal', size: '1.60m', type: 'Design (ዲዛይን)', price: 900 },
       { name: 'Universal', size: '1.60m', type: 'Factory Fabrica (ፋብሪካ)', price: 950 },
@@ -552,136 +557,6 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
   },
   {
     code: 'MAT-0037',
-    nameEn: 'Upholstery Seat Fabric & Leather',
-    nameAm: 'የወንበር ታፕሴሪ ቆዳ እና ጨርቅ',
-    unit: Unit.METERS,
-    price: 900,
-    lowStockThreshold: 25,
-    isStandaloneSellable: false,
-    isBulkTracked: true,
-    brands: [
-      { name: 'Universal', type: 'Imitation Leather (ሰው ሠራሽ ቆዳ)', price: 950 },
-      { name: 'Universal', type: 'Carbon Fiber Fabric (ካርቦን ፋይበር)', price: 1100 },
-      { name: 'Universal', type: 'Super Carbon Fiber (ሱፐር ካርቦን)', price: 1500 },
-      { name: 'Universal', type: 'Stock Fabric (ስቶክ ጨርቅ)', price: 800 },
-      { name: 'Universal', color: 'Black', type: 'Pergamod Partition (ፐርጋሞድ መከፋፈያ)', price: 850 },
-      { name: 'Universal', color: 'Beige', type: 'Pergamod Partition (ፐርጋሞድ መከፋፈያ)', price: 850 },
-      { name: 'Universal', color: 'Grey', type: 'Pergamod Partition (ፐርጋሞድ መከፋፈያ)', price: 850 },
-    ],
-  },
-  {
-    code: 'MAT-0038',
-    nameEn: 'Steering Wheel Wrap Leather Roll',
-    nameAm: 'የመሪ ልባስ ስፌት ቆዳ',
-    unit: Unit.METERS,
-    price: 750,
-    lowStockThreshold: 10,
-    isStandaloneSellable: false,
-    brands: [
-      { name: 'Universal', type: 'Smooth Black Nappa', price: 750 },
-      { name: 'Universal', type: 'Perforated Breathable', price: 800 },
-      { name: 'Universal', type: 'Carbon Texture', price: 850 },
-    ],
-  },
-  {
-    code: 'MAT-0039',
-    nameEn: 'Upholstery Mastic & Spray Adhesive',
-    nameAm: 'የታፕሴሪ ማስቲሽ እና ማጣበቂያ',
-    unit: Unit.PCS,
-    price: 500,
-    lowStockThreshold: 10,
-    isStandaloneSellable: false,
-    brands: [
-      { name: 'Gabo', type: 'Spray Mastic', price: 550 },
-      { name: 'Sky', type: 'Liquid Mastic', price: 500 },
-      { name: 'Universal', type: 'Heavy Contact Cement (እጭ ማጣበቂያ)', price: 700 },
-    ],
-  },
-  {
-    code: 'MAT-0040',
-    nameEn: 'Foam Padding & Backing Sponge',
-    nameAm: 'የስፖንጅ ፓዲንግ እና አብጀዲ',
-    unit: Unit.METERS,
-    price: 350,
-    lowStockThreshold: 30,
-    isStandaloneSellable: false,
-    isBulkTracked: true,
-    brands: [
-      { name: 'Universal', size: '1cm', type: '1cm Foam (ባለ 1)', price: 250 },
-      { name: 'Universal', size: '2cm', type: '2cm Foam (ባለ 2)', price: 350 },
-      { name: 'Universal', type: 'Bonded High-Density (ቦንደድ)', price: 550 },
-      { name: 'Universal', type: 'Abjedi Canvas Backing (አብጀዲ)', price: 300 },
-    ],
-  },
-  {
-    code: 'MAT-0041',
-    nameEn: 'Wire Hooks & Fastener Clips',
-    nameAm: 'የፌርሞ ሽቦ እና ጋንች',
-    unit: Unit.PCS,
-    price: 200,
-    lowStockThreshold: 15,
-    isStandaloneSellable: false,
-    brands: [
-      { name: 'Universal', type: 'Thick Wire (ወፍራሙ)', price: 250 },
-      { name: 'Universal', type: 'Slim Wire (ቀጭኑ)', price: 200 },
-    ],
-  },
-  {
-    code: 'MAT-0042',
-    nameEn: 'Upholstery Thread & Elastic Webbing',
-    nameAm: 'የታፕሴሪ ክር እና የወገብ ላስቲክ',
-    unit: Unit.PCS,
-    price: 200,
-    lowStockThreshold: 15,
-    isStandaloneSellable: false,
-    brands: [
-      { name: 'Universal', type: 'Bonded Nylon Thread Spool (ክር)', price: 250 },
-      { name: 'Universal', type: 'Waist Elastic Webbing (የወገብ ላስቲክ)', price: 180 },
-    ],
-  },
-  {
-    code: 'MAT-0043',
-    nameEn: 'Paint Protection Film (PPF) Roll',
-    nameAm: 'የፒፒኤፍ መከላከያ ፊልም ጥቅል',
-    unit: Unit.METERS,
-    price: 3500,
-    lowStockThreshold: 15,
-    isStandaloneSellable: false,
-    isBulkTracked: true,
-    brands: [
-      { name: 'Universal', type: 'Full Body Clear TPU PPF', price: 3500 },
-      { name: 'Universal', type: 'Sunroof PPF Film', price: 2800 },
-      { name: 'Universal', type: 'Windshield Exterior Glass PPF', price: 4200 },
-    ],
-  },
-  {
-    code: 'MAT-0044',
-    nameEn: 'PPF Squeegee & Buffer Pad Tool',
-    nameAm: 'የፒፒኤፍ ስኩዊጂ እና ባፈር ፓድ',
-    unit: Unit.PCS,
-    price: 300,
-    lowStockThreshold: 8,
-    isStandaloneSellable: false,
-    brands: [
-      { name: 'Universal', type: 'Rubber Squeegee', price: 350 },
-      { name: 'Universal', type: 'Felt Buffer Pad', price: 250 },
-    ],
-  },
-  {
-    code: 'MAT-0045',
-    nameEn: 'Precision Cutter & Blades',
-    nameAm: 'የመቁረጫ ምላጭ እና ካተር',
-    unit: Unit.PCS,
-    price: 250,
-    lowStockThreshold: 10,
-    isStandaloneSellable: false,
-    brands: [
-      { name: 'Universal', type: '30° Snap-Off Blades (Pack of 10)', price: 250 },
-      { name: 'Universal', type: 'Precision Knife Handle', price: 350 },
-    ],
-  },
-  {
-    code: 'MAT-0046',
     nameEn: 'Detailing Clay Bar',
     nameAm: 'የጽዳት ክሌይ ባር',
     unit: Unit.PCS,
@@ -694,23 +569,9 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0047',
-    nameEn: 'PPF & Paint Polishing Compound',
-    nameAm: 'የፒፒኤፍ እና ቀለም ማስተካከያ ኮምፓውንድ',
-    unit: Unit.PCS,
-    price: 1500,
-    lowStockThreshold: 6,
-    isStandaloneSellable: false,
-    brands: [
-      { name: 'Universal', type: 'Primary Heavy Cut', price: 1600 },
-      { name: 'Universal', type: 'Secondary Medium Cut', price: 1500 },
-      { name: 'Universal', type: 'Shiner Finishing Compound', price: 1400 },
-    ],
-  },
-  {
-    code: 'MAT-0048',
-    nameEn: 'Machine Polishing Foam Pads',
-    nameAm: 'የማሽን ፖሊሽ ፓድ',
+    code: 'MAT-0038',
+    nameEn: 'Polishing Pads (Cutting Pad)',
+    nameAm: 'ፖሊሽ ፓድ (ከቲንግ ፓድ)',
     unit: Unit.PCS,
     price: 750,
     lowStockThreshold: 10,
@@ -722,9 +583,9 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
     ],
   },
   {
-    code: 'MAT-0049',
-    nameEn: 'Wet & Dry Automotive Sandpaper',
-    nameAm: 'የውሃ ማጠሪያ ወረቀት',
+    code: 'MAT-0039',
+    nameEn: 'Sandpaper',
+    nameAm: 'የብርጭቆ ወረቀት',
     unit: Unit.PCS,
     price: 150,
     lowStockThreshold: 20,
@@ -734,20 +595,7 @@ const MATERIALS_CATALOG: MaterialSeedItem[] = [
       { name: 'Universal', size: '2000 Grit', price: 150 },
       { name: 'Universal', size: '3000 Grit', price: 150 },
     ],
-  },
-  {
-    code: 'MAT-0050',
-    nameEn: 'Horsehair Detailing & Shiner Brushes',
-    nameAm: 'የዲቴይሊንግ እና ማብረቂያ ብሩሽ',
-    unit: Unit.PCS,
-    price: 450,
-    lowStockThreshold: 8,
-    isStandaloneSellable: false,
-    brands: [
-      { name: 'Universal', type: 'Horsehair Shiner Brush', price: 450 },
-      { name: 'Universal', type: 'Detailing Crevice Brush Set', price: 600 },
-    ],
-  },
+  }
 ];
 
 const SERVICES_CATALOG: ServiceSeedItem[] = [
@@ -756,15 +604,16 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
     nameEn: 'Complete Auto Detailing',
     nameAm: 'የመኪና ሙሉ ጽዳት እና ዲቴይሊንግ',
     groupEn: 'Detailing & Paint Correction',
+    imageUrl: 'services/complete-auto-detailing.webp',
     categories: [
       {
         nameEn: 'Interior Steam & Deep Clean',
         nameAm: 'የውስጥ ጥልቅ የእንፋሎት ጽዳት',
         price: 2500,
         materialsUsed: [
-          { materialCode: 'MAT-0004', quantity: 1 },
-          { materialCode: 'MAT-0003', quantity: 1 },
-          { materialCode: 'MAT-0046', quantity: 1 },
+          { materialCode: 'MAT-0006', quantity: 1 },
+          { materialCode: 'MAT-0005', quantity: 1 },
+          { materialCode: 'MAT-0037', quantity: 1 },
         ],
       },
       {
@@ -772,8 +621,9 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
         nameAm: 'የውጭ ማሽን ፖሊሽ እና ሰም',
         price: 3500,
         materialsUsed: [
-          { materialCode: 'MAT-0002', quantity: 1 },
-          { materialCode: 'MAT-0048', quantity: 1 },
+          { materialCode: 'MAT-0003', quantity: 1 },
+          { materialCode: 'MAT-0004', quantity: 1 },
+          { materialCode: 'MAT-0038', quantity: 1 },
         ],
       },
       {
@@ -781,10 +631,11 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
         nameAm: 'ሙሉ የውስጥና የውጭ ዲቴይሊንግ',
         price: 5000,
         materialsUsed: [
+          { materialCode: 'MAT-0008', quantity: 1 },
           { materialCode: 'MAT-0006', quantity: 1 },
-          { materialCode: 'MAT-0004', quantity: 1 },
           { materialCode: 'MAT-0002', quantity: 1 },
-          { materialCode: 'MAT-0009', quantity: 1 },
+          { materialCode: 'MAT-0004', quantity: 1 },
+          { materialCode: 'MAT-0011', quantity: 1 },
         ],
       },
     ],
@@ -793,6 +644,7 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
     nameEn: 'Ceramic Coating Protection',
     nameAm: 'ሴራሚክ ኮቲንግ',
     groupEn: 'Detailing & Paint Correction',
+    imageUrl: 'services/ceramic-coating-protection.webp',
     categories: [
       {
         nameEn: 'Normal Ceramic Coating (1 Year)',
@@ -812,42 +664,27 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
     nameEn: 'Paint Protection Film (PPF) Installation',
     nameAm: 'የመኪና ፒፒኤፍ ገጠማ',
     groupEn: 'Paint Protection Film (PPF)',
+    imageUrl: 'services/paint-protection-film-ppf-installation.webp',
     categories: [
       {
         nameEn: 'Front Bumper & Hood Package',
         nameAm: 'የፊት መከላከያ PPF',
         price: 18000,
-        materialsUsed: [
-          { materialCode: 'MAT-0043', quantity: 3 },
-          { materialCode: 'MAT-0044', quantity: 1 },
-          { materialCode: 'MAT-0045', quantity: 1 },
-        ],
       },
       {
         nameEn: 'Full Vehicle Body PPF',
         nameAm: 'ሙሉ የመኪና አካል PPF',
         price: 65000,
-        materialsUsed: [
-          { materialCode: 'MAT-0043', quantity: 15 },
-          { materialCode: 'MAT-0044', quantity: 1 },
-          { materialCode: 'MAT-0045', quantity: 1 },
-        ],
       },
       {
         nameEn: 'Panoramic Sunroof PPF',
         nameAm: 'የሰንሩፍ PPF',
         price: 4500,
-        materialsUsed: [
-          { materialCode: 'MAT-0043', quantity: 1.5 },
-        ],
       },
       {
         nameEn: 'Windshield Exterior Glass PPF',
         nameAm: 'የፊት መስታወት PPF',
         price: 6000,
-        materialsUsed: [
-          { materialCode: 'MAT-0043', quantity: 1.5 },
-        ],
       },
     ],
   },
@@ -857,6 +694,7 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
     nameEn: 'Window Tinting Application',
     nameAm: 'የመኪና መስኮት ስቲከር / ቲንት ገጠማ',
     groupEn: 'Window Tinting & Glass',
+    imageUrl: 'services/window-tinting-application.webp',
     categories: [
       {
         nameEn: 'Standard UV Sun Protection Tint',
@@ -881,59 +719,32 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
     nameEn: 'Custom Seat Upholstery Tailoring',
     nameAm: 'የወንበር ልባስ ስፌት እና ገጠማ',
     groupEn: 'Custom Upholstery & Seats',
+    imageUrl: 'services/custom-seat-upholstery-tailoring.webp',
     categories: [
       {
         nameEn: 'Stock Fabric Tailoring',
         nameAm: 'የስቶክ ጨርቅ ወንበር ልባስ',
         price: 4500,
-        materialsUsed: [
-          { materialCode: 'MAT-0037', quantity: 5 },
-          { materialCode: 'MAT-0040', quantity: 5 },
-          { materialCode: 'MAT-0042', quantity: 1 },
-          { materialCode: 'MAT-0041', quantity: 1 },
-        ],
       },
       {
         nameEn: 'Imitation Leather Fitting',
         nameAm: 'ሰው ሠራሽ ቆዳ ወንበር ልባስ',
         price: 6500,
-        materialsUsed: [
-          { materialCode: 'MAT-0037', quantity: 5 },
-          { materialCode: 'MAT-0040', quantity: 5 },
-          { materialCode: 'MAT-0039', quantity: 1 },
-          { materialCode: 'MAT-0042', quantity: 1 },
-        ],
       },
       {
         nameEn: 'Carbon Fiber Styling Cover',
         nameAm: 'ካርቦን ፋይበር ዲዛይን ወንበር ልባስ',
         price: 8500,
-        materialsUsed: [
-          { materialCode: 'MAT-0037', quantity: 5 },
-          { materialCode: 'MAT-0040', quantity: 5 },
-          { materialCode: 'MAT-0039', quantity: 1 },
-          { materialCode: 'MAT-0042', quantity: 1 },
-        ],
       },
       {
         nameEn: 'Super Carbon Fiber VIP Luxury',
         nameAm: 'ሱፐር ካርቦን ቪአይፒ ወንበር ልባስ',
         price: 13000,
-        materialsUsed: [
-          { materialCode: 'MAT-0037', quantity: 5 },
-          { materialCode: 'MAT-0040', quantity: 5 },
-          { materialCode: 'MAT-0039', quantity: 1 },
-          { materialCode: 'MAT-0042', quantity: 1 },
-        ],
       },
       {
         nameEn: 'Pergamod Partition Cover',
         nameAm: 'ፐርጋሞድ የወንበር መከፋፈያ ልባስ',
         price: 3000,
-        materialsUsed: [
-          { materialCode: 'MAT-0037', quantity: 3 },
-          { materialCode: 'MAT-0042', quantity: 1 },
-        ],
       },
     ],
   },
@@ -941,24 +752,17 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
     nameEn: 'Steering Wheel Custom Leather Stitching',
     nameAm: 'የመሪ ልባስ ስፌት',
     groupEn: 'Custom Upholstery & Seats',
+    imageUrl: 'services/steering-wheel-custom-leather-stitching.webp',
     categories: [
       {
         nameEn: 'Standard Hand-Stitch Leather',
         nameAm: 'መደበኛ በእጅ የተሰፋ መሪ',
         price: 1200,
-        materialsUsed: [
-          { materialCode: 'MAT-0038', quantity: 1 },
-          { materialCode: 'MAT-0042', quantity: 1 },
-        ],
       },
       {
         nameEn: 'Perforated / Carbon Custom Stitch',
         nameAm: 'ልዩ ፐርፎሬትድ/ካርቦን ስፌት',
         price: 1800,
-        materialsUsed: [
-          { materialCode: 'MAT-0038', quantity: 1 },
-          { materialCode: 'MAT-0042', quantity: 1 },
-        ],
       },
     ],
   },
@@ -968,14 +772,14 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
     nameEn: 'Custom Floor Mat Tailoring & Installation',
     nameAm: 'የወለል ምንጣፍ ስፌት እና ገጠማ',
     groupEn: 'Floor Mats & Carpeting',
+    imageUrl: 'services/custom-floor-mat-tailoring-installation.webp',
     categories: [
       {
         nameEn: 'Standard 1.40m Pattern Fit',
         nameAm: 'ባለ 1.40 ሜትር የወለል ንጣፍ',
         price: 3500,
         materialsUsed: [
-          { materialCode: 'MAT-0035', quantity: 3 },
-          { materialCode: 'MAT-0041', quantity: 1 },
+          { materialCode: 'MAT-0036', quantity: 3 },
         ],
       },
       {
@@ -984,7 +788,6 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
         price: 5500,
         materialsUsed: [
           { materialCode: 'MAT-0036', quantity: 3 },
-          { materialCode: 'MAT-0041', quantity: 1 },
         ],
       },
       {
@@ -992,7 +795,7 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
         nameAm: 'የሻንጣ ማስቀመጫ/የኋላ ንጣፍ',
         price: 1800,
         materialsUsed: [
-          { materialCode: 'MAT-0035', quantity: 1.5 },
+          { materialCode: 'MAT-0036', quantity: 1.5 },
         ],
       },
     ],
@@ -1003,13 +806,14 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
     nameEn: 'Vehicle Security & Alarm Installation',
     nameAm: 'የአላርም እና ሴንትራል ሎክ ገጠማ',
     groupEn: 'Automotive Electronics & Security',
+    imageUrl: 'services/vehicle-security-alarm-installation.webp',
     categories: [
       {
         nameEn: 'Car Alarm System Installation',
         nameAm: 'መደበኛ አላርም ገጠማ',
         price: 1500,
         materialsUsed: [
-          { materialCode: 'MAT-0024', quantity: 1 },
+          { materialCode: 'MAT-0026', quantity: 1 },
         ],
       },
       {
@@ -1017,7 +821,7 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
         nameAm: 'ሴንትራል ሎክ ገጠማ',
         price: 1200,
         materialsUsed: [
-          { materialCode: 'MAT-0025', quantity: 1 },
+          { materialCode: 'MAT-0027', quantity: 1 },
         ],
       },
       {
@@ -1025,8 +829,8 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
         nameAm: 'አላርም እና ሴንትራል ሎክ በአንድ ላይ',
         price: 2400,
         materialsUsed: [
-          { materialCode: 'MAT-0024', quantity: 1 },
-          { materialCode: 'MAT-0025', quantity: 1 },
+          { materialCode: 'MAT-0026', quantity: 1 },
+          { materialCode: 'MAT-0027', quantity: 1 },
         ],
       },
     ],
@@ -1035,13 +839,14 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
     nameEn: 'Infotainment & Audio Setup',
     nameAm: 'የአንድሮይድ ስክሪን እና ኦዲዮ ገጠማ',
     groupEn: 'Automotive Electronics & Security',
+    imageUrl: 'services/infotainment-audio-setup.webp',
     categories: [
       {
         nameEn: 'Android Touchscreen Installation',
         nameAm: 'የአንድሮይድ ስክሪን ገጠማ',
         price: 1500,
         materialsUsed: [
-          { materialCode: 'MAT-0026', quantity: 1 },
+          { materialCode: 'MAT-0028', quantity: 1 },
         ],
       },
       {
@@ -1054,7 +859,7 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
         nameAm: 'የበር ስፒከር ገጠማ',
         price: 800,
         materialsUsed: [
-          { materialCode: 'MAT-0027', quantity: 1 },
+          { materialCode: 'MAT-0029', quantity: 1 },
         ],
       },
     ],
@@ -1063,13 +868,14 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
     nameEn: 'GPS Tracker Installation',
     nameAm: 'የጂ.ፒ.ኤስ መከታተያ ገጠማ',
     groupEn: 'Automotive Electronics & Security',
+    imageUrl: 'services/gps-tracker-installation.webp',
     categories: [
       {
         nameEn: 'Concealed GPS Tracker Installation',
         nameAm: 'የጂ.ፒ.ኤስ መከታተያ ገጠማ',
         price: 1500,
         materialsUsed: [
-          { materialCode: 'MAT-0023', quantity: 1 },
+          { materialCode: 'MAT-0025', quantity: 1 },
         ],
       },
     ],
@@ -1080,13 +886,14 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
     nameEn: 'Exterior Accessories Fitting',
     nameAm: 'የውጭ መከላከያ ዕቃዎች ገጠማ',
     groupEn: 'Exterior Styling & Accessories Fitting',
+    imageUrl: 'services/exterior-accessories-fitting.webp',
     categories: [
       {
         nameEn: 'Side Mirror Security Wire & Lock Installation',
         nameAm: 'የስፖኪዮ እና ፌርሞ ሽቦ ገጠማ',
         price: 600,
         materialsUsed: [
-          { materialCode: 'MAT-0022', quantity: 1 },
+          { materialCode: 'MAT-0024', quantity: 1 },
         ],
       },
       {
@@ -1094,7 +901,7 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
         nameAm: 'የጭቃ መከላከያ ገጠማ',
         price: 500,
         materialsUsed: [
-          { materialCode: 'MAT-0018', quantity: 1 },
+          { materialCode: 'MAT-0020', quantity: 1 },
         ],
       },
       {
@@ -1102,15 +909,133 @@ const SERVICES_CATALOG: ServiceSeedItem[] = [
         nameAm: 'የንፋስ/ፀሐይ መከላከያ ቪዘር ገጠማ',
         price: 500,
         materialsUsed: [
-          { materialCode: 'MAT-0019', quantity: 1 },
+          { materialCode: 'MAT-0021', quantity: 1 },
         ],
       },
     ],
   },
 ];
 
+const MATERIAL_IMAGE_MAP: Record<string, string> = {
+  'MAT-0001': 'mat-0001-air-freshener.webp',
+  'MAT-0002': 'mat-0002-car-polish.webp',
+  'MAT-0003': 'mat-0003-polishing-compound.webp',
+  'MAT-0004': 'mat-0004-wax.webp',
+  'MAT-0005': 'mat-0005-leather-cleaner.webp',
+  'MAT-0006': 'mat-0006-foam-cleaner.webp',
+  'MAT-0007': 'mat-0007-dashboard-polish.webp',
+  'MAT-0008': 'mat-0008-car-wash-shampoo.webp',
+  'MAT-0009': 'mat-0009-radiator-coolant.webp',
+  'MAT-0010': 'mat-0010-tire-shine-foam.webp',
+  'MAT-0011': 'mat-0011-chamois-drying-towel.webp',
+  'MAT-0012': 'mat-0012-first-aid-kit.webp',
+  'MAT-0013': 'mat-0013-fire-stop-extinguisher.webp',
+  'MAT-0014': 'mat-0014-crick-jack.webp',
+  'MAT-0015': 'mat-0015-wheel-lug-wrench.webp',
+  'MAT-0016': 'mat-0016-portable-air-compressor.webp',
+  'MAT-0017': 'mat-0017-wheel-lock-nuts.webp',
+  'MAT-0018': 'mat-0018-spare-tire-steel-wheel.webp',
+  'MAT-0019': 'mat-0019-gym-bag.webp',
+  'MAT-0020': 'mat-0020-mud-guard.webp',
+  'MAT-0021': 'mat-0021-windbreak.webp',
+  'MAT-0022': 'mat-0022-car-body-cover.webp',
+  'MAT-0023': 'mat-0023-license-plate-frame.webp',
+  'MAT-0024': 'mat-0024-side-mirror-protection-wire.webp',
+  'MAT-0025': 'mat-0025-gps-tracker.webp',
+  'MAT-0026': 'mat-0026-alarm-system-kit.webp',
+  'MAT-0027': 'mat-0027-central-door-locking-kit.webp',
+  'MAT-0028': 'mat-0028-android-touchscreen.webp',
+  'MAT-0029': 'mat-0029-car-speaker.webp',
+  'MAT-0030': 'mat-0030-remote-key-battery.webp',
+  'MAT-0031': 'mat-0031-steering-wheel-cover.webp',
+  'MAT-0032': 'mat-0032-key-cover.webp',
+  'MAT-0033': 'mat-0033-floor-mats.webp',
+  'MAT-0034': 'mat-0034-armrest.webp',
+  'MAT-0035': 'mat-0035-cushion-seat-cover.webp',
+  'MAT-0036': 'mat-0036-floor-mat-material-roll.webp',
+  'MAT-0037': 'mat-0037-detailing-clay-bar.webp',
+  'MAT-0038': 'mat-0038-polishing-pads.webp',
+  'MAT-0039': 'mat-0039-sandpaper.webp',
+};
+
+async function syncCatalogAssets() {
+  console.log('🖼️  Syncing catalog asset images to uploads directory...');
+  const uploadsDir = path.resolve(__dirname, '../uploads');
+  const r2Base = (process.env.R2_PUBLIC_BASE_URL || 'https://pub-09661d9805264d67ad957b15391bcffd.r2.dev').replace(/\/+$/, '');
+
+  const matUploadDir = path.join(uploadsDir, 'materials');
+  if (!fs.existsSync(matUploadDir)) fs.mkdirSync(matUploadDir, { recursive: true });
+
+  const matAssetDir = path.resolve(__dirname, '../../Materials-Asset');
+  if (fs.existsSync(matAssetDir)) {
+    const files = fs.readdirSync(matAssetDir).filter((f) => f.endsWith('.webp'));
+    for (const file of files) {
+      fs.copyFileSync(path.join(matAssetDir, file), path.join(matUploadDir, file));
+    }
+    console.log(`  ✓ Synced ${files.length} material images from Materials-Asset to uploads/materials`);
+  } else if (process.env.USE_R2 === 'true' || process.env.NODE_ENV === 'production') {
+    console.log(`  ℹ Materials-Asset not found locally. Attempting download from Cloudflare R2...`);
+    let downloaded = 0;
+    for (const fileName of Object.values(MATERIAL_IMAGE_MAP)) {
+      const dest = path.join(matUploadDir, fileName);
+      if (!fs.existsSync(dest)) {
+        try {
+          const res = await fetch(`${r2Base}/materials/${fileName}`);
+          if (res.ok) {
+            fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
+            downloaded++;
+          }
+        } catch {
+          // Fallback will redirect on HTTP request anyway
+        }
+      }
+    }
+    if (downloaded > 0) {
+      console.log(`  ✓ Downloaded ${downloaded} material images from Cloudflare R2`);
+    }
+  }
+
+  const srvUploadDir = path.join(uploadsDir, 'services');
+  if (!fs.existsSync(srvUploadDir)) fs.mkdirSync(srvUploadDir, { recursive: true });
+
+  const srvAssetDir = path.resolve(__dirname, '../../Services-Asset');
+  if (fs.existsSync(srvAssetDir)) {
+    const files = fs.readdirSync(srvAssetDir).filter((f) => f.endsWith('.webp'));
+    for (const file of files) {
+      fs.copyFileSync(path.join(srvAssetDir, file), path.join(srvUploadDir, file));
+    }
+    console.log(`  ✓ Synced ${files.length} service images from Services-Asset to uploads/services`);
+  } else if (process.env.USE_R2 === 'true' || process.env.NODE_ENV === 'production') {
+    console.log(`  ℹ Services-Asset not found locally. Attempting download from Cloudflare R2...`);
+    let downloaded = 0;
+    for (const svc of SERVICES_CATALOG) {
+      if (svc.imageUrl) {
+        const fileName = path.basename(svc.imageUrl);
+        const dest = path.join(srvUploadDir, fileName);
+        if (!fs.existsSync(dest)) {
+          try {
+            const res = await fetch(`${r2Base}/services/${fileName}`);
+            if (res.ok) {
+              fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
+              downloaded++;
+            }
+          } catch {
+            // Fallback will redirect on HTTP request anyway
+          }
+        }
+      }
+    }
+    if (downloaded > 0) {
+      console.log(`  ✓ Downloaded ${downloaded} service images from Cloudflare R2`);
+    }
+  }
+}
+
 async function main() {
   console.log('🚀 Starting New Standardized Catalog Seeding (Yonatan Car Decor)...');
+
+  // Auto-sync asset images
+  await syncCatalogAssets();
 
   // 1. Cleanly purge old catalog and transaction tables
   console.log('🧹 Purging old mock materials, services, and transaction lines...');
@@ -1162,12 +1087,25 @@ async function main() {
   console.log(`📦 Seeding ${MATERIALS_CATALOG.length} standardized materials with variants (0 initial stock, ready for counting)...`);
   const materialCodeMap = new Map<string, string>(); // code -> id
 
+  const matAssetDir = path.resolve(__dirname, '../../Materials-Asset');
+  const matUploadDir = path.resolve(__dirname, '../uploads/materials');
+  const matAssetFiles = fs.existsSync(matAssetDir)
+    ? fs.readdirSync(matAssetDir).filter((f) => f.endsWith('.webp'))
+    : fs.existsSync(matUploadDir)
+      ? fs.readdirSync(matUploadDir).filter((f) => f.endsWith('.webp'))
+      : [];
+
   for (const item of MATERIALS_CATALOG) {
+    const codePrefix = `${item.code.toLowerCase()}-`;
+    const matchedAssetFile = matAssetFiles.find((f) => f.startsWith(codePrefix)) || MATERIAL_IMAGE_MAP[item.code];
+    const finalImageUrl = item.imageUrl || (matchedAssetFile ? `materials/${matchedAssetFile}` : null);
+
     const material = await prisma.material.create({
       data: {
         itemCode: item.code,
         nameEn: item.nameEn,
         nameAm: item.nameAm,
+        imageUrl: finalImageUrl,
         unit: item.unit,
         currentPrice: item.price,
         lowStockThreshold: item.lowStockThreshold,
@@ -1251,6 +1189,7 @@ async function main() {
       data: {
         nameEn: svc.nameEn,
         nameAm: svc.nameAm,
+        imageUrl: svc.imageUrl || null,
         serviceGroupId: groupId,
       },
     });

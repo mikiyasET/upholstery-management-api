@@ -23,10 +23,25 @@ app.use(express.json());
 const UPLOADS_DIR = process.env.UPLOADS_DIR || './uploads';
 app.use('/uploads', express.static(path.resolve(UPLOADS_DIR)));
 
-// Fallback for car assets: if an image is not found on local disk in /uploads/cars, redirect to Cloudflare R2
+// Fallback for catalog assets: if an image is not found on local disk in /uploads, redirect to Cloudflare R2
 const R2_BASE = (process.env.R2_PUBLIC_BASE_URL || 'https://pub-09661d9805264d67ad957b15391bcffd.r2.dev').replace(/\/+$/, '');
+
+// Car assets (R2 bucket root has /brands and /models)
 app.use('/uploads/cars', (req, res) => {
-  res.redirect(302, `${R2_BASE}${req.path}`);
+  const cleanPath = req.path.startsWith('/') ? req.path : `/${req.path}`;
+  res.redirect(302, `${R2_BASE}${cleanPath}`);
+});
+
+// Material assets (R2 bucket has /materials)
+app.use('/uploads/materials', (req, res) => {
+  const cleanPath = req.path.startsWith('/') ? req.path : `/${req.path}`;
+  res.redirect(302, `${R2_BASE}/materials${cleanPath}`);
+});
+
+// Service assets (R2 bucket has /services)
+app.use('/uploads/services', (req, res) => {
+  const cleanPath = req.path.startsWith('/') ? req.path : `/${req.path}`;
+  res.redirect(302, `${R2_BASE}/services${cleanPath}`);
 });
 
 app.get('/health', (req, res) => {
